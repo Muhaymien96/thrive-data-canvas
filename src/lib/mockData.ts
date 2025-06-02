@@ -1,4 +1,3 @@
-
 export interface Transaction {
   id: number;
   date: string;
@@ -53,6 +52,57 @@ export interface SupplierTransaction {
   description: string;
   status: 'completed' | 'pending';
   invoiceNumber?: string;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  business: 'Fish' | 'Honey' | 'Mushrooms';
+  category: string;
+  unit: string; // kg, L, box, etc.
+  costPrice: number; // what we paid for it
+  sellingPrice: number; // what we sell it for
+  markupPercentage: number;
+  currentStock: number;
+  minStockLevel: number;
+  supplier: string;
+  lastRestocked: string;
+  expiryDate?: string;
+}
+
+export interface StockMovement {
+  id: number;
+  productId: number;
+  type: 'purchase' | 'sale' | 'adjustment';
+  quantity: number;
+  unitCost?: number;
+  unitPrice?: number;
+  date: string;
+  reference: string; // transaction ID, purchase order, etc.
+  notes?: string;
+}
+
+export interface Invoice {
+  id: string;
+  transactionId: number;
+  customerName: string;
+  customerEmail?: string;
+  business: 'Fish' | 'Honey' | 'Mushrooms';
+  date: string;
+  dueDate?: string;
+  items: InvoiceItem[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  status: 'draft' | 'sent' | 'paid' | 'overdue';
+}
+
+export interface InvoiceItem {
+  productId: number;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
 }
 
 export const mockTransactions: Transaction[] = [
@@ -290,6 +340,186 @@ export const mockSupplierTransactions: SupplierTransaction[] = [
   }
 ];
 
+export const mockProducts: Product[] = [
+  {
+    id: 1,
+    name: 'Fresh Salmon',
+    business: 'Fish',
+    category: 'Premium Fish',
+    unit: 'kg',
+    costPrice: 45,
+    sellingPrice: 65,
+    markupPercentage: 44.4,
+    currentStock: 25,
+    minStockLevel: 10,
+    supplier: 'Atlantic Fisheries',
+    lastRestocked: '2025-05-25',
+    expiryDate: '2025-06-05'
+  },
+  {
+    id: 2,
+    name: 'Fresh Tuna',
+    business: 'Fish',
+    category: 'Premium Fish',
+    unit: 'kg',
+    costPrice: 55,
+    sellingPrice: 80,
+    markupPercentage: 45.5,
+    currentStock: 15,
+    minStockLevel: 8,
+    supplier: 'Atlantic Fisheries',
+    lastRestocked: '2025-05-25',
+    expiryDate: '2025-06-08'
+  },
+  {
+    id: 3,
+    name: 'Wildflower Honey',
+    business: 'Honey',
+    category: 'Raw Honey',
+    unit: 'L',
+    costPrice: 28,
+    sellingPrice: 45,
+    markupPercentage: 60.7,
+    currentStock: 50,
+    minStockLevel: 15,
+    supplier: 'Golden Hive Apiaries',
+    lastRestocked: '2025-05-20'
+  },
+  {
+    id: 4,
+    name: 'Manuka Honey',
+    business: 'Honey',
+    category: 'Premium Honey',
+    unit: 'L',
+    costPrice: 85,
+    sellingPrice: 135,
+    markupPercentage: 58.8,
+    currentStock: 20,
+    minStockLevel: 5,
+    supplier: 'Golden Hive Apiaries',
+    lastRestocked: '2025-05-20'
+  },
+  {
+    id: 5,
+    name: 'Shiitake Mushrooms',
+    business: 'Mushrooms',
+    category: 'Exotic Mushrooms',
+    unit: 'kg',
+    costPrice: 35,
+    sellingPrice: 55,
+    markupPercentage: 57.1,
+    currentStock: 12,
+    minStockLevel: 5,
+    supplier: 'Forest Floor Farms',
+    lastRestocked: '2025-05-22',
+    expiryDate: '2025-06-15'
+  },
+  {
+    id: 6,
+    name: 'Oyster Mushrooms',
+    business: 'Mushrooms',
+    category: 'Fresh Mushrooms',
+    unit: 'kg',
+    costPrice: 25,
+    sellingPrice: 40,
+    markupPercentage: 60,
+    currentStock: 18,
+    minStockLevel: 8,
+    supplier: 'Forest Floor Farms',
+    lastRestocked: '2025-05-22',
+    expiryDate: '2025-06-12'
+  }
+];
+
+export const mockStockMovements: StockMovement[] = [
+  {
+    id: 1,
+    productId: 1,
+    type: 'purchase',
+    quantity: 50,
+    unitCost: 45,
+    date: '2025-05-25',
+    reference: 'PO-2025-001',
+    notes: 'Fresh delivery from Atlantic Fisheries'
+  },
+  {
+    id: 2,
+    productId: 1,
+    type: 'sale',
+    quantity: 25,
+    unitPrice: 65,
+    date: '2025-06-01',
+    reference: 'TXN-001',
+    notes: 'Sale to Ocean Fresh Restaurant'
+  },
+  {
+    id: 3,
+    productId: 3,
+    type: 'purchase',
+    quantity: 75,
+    unitCost: 28,
+    date: '2025-05-20',
+    reference: 'PO-2025-002',
+    notes: 'Honey delivery from Golden Hive'
+  },
+  {
+    id: 4,
+    productId: 3,
+    type: 'sale',
+    quantity: 25,
+    unitPrice: 45,
+    date: '2025-06-01',
+    reference: 'TXN-002',
+    notes: 'Sale to Farmers Market'
+  }
+];
+
+export const mockInvoices: Invoice[] = [
+  {
+    id: 'INV-2025-001',
+    transactionId: 1,
+    customerName: 'Farmers Market',
+    customerEmail: 'coordinator@farmersmarket.com',
+    business: 'Honey',
+    date: '2025-06-01',
+    dueDate: '2025-06-15',
+    items: [
+      {
+        productId: 3,
+        productName: 'Wildflower Honey',
+        quantity: 25,
+        unitPrice: 45,
+        total: 1125
+      }
+    ],
+    subtotal: 1125,
+    tax: 168.75,
+    total: 1293.75,
+    status: 'paid'
+  },
+  {
+    id: 'INV-2025-002',
+    transactionId: 2,
+    customerName: 'Ocean Fresh Restaurant',
+    customerEmail: 'chef@oceanfresh.com',
+    business: 'Fish',
+    date: '2025-06-01',
+    items: [
+      {
+        productId: 1,
+        productName: 'Fresh Salmon',
+        quantity: 25,
+        unitPrice: 65,
+        total: 1625
+      }
+    ],
+    subtotal: 1625,
+    tax: 243.75,
+    total: 1868.75,
+    status: 'paid'
+  }
+];
+
 export const getMonthlyRevenue = (business?: string) => {
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
@@ -347,4 +577,31 @@ export const getCustomersByBusiness = (business: string) => {
   return mockCustomers.filter(customer => 
     businessCustomers.includes(customer.name)
   );
+};
+
+export const getProductsByBusiness = (business: string) => {
+  if (business === 'All') return mockProducts;
+  return mockProducts.filter(product => product.business === business);
+};
+
+export const getStockMovements = (productId?: number, business?: string) => {
+  return mockStockMovements.filter(movement => {
+    const product = mockProducts.find(p => p.id === movement.productId);
+    const matchesProduct = !productId || movement.productId === productId;
+    const matchesBusiness = !business || business === 'All' || product?.business === business;
+    return matchesProduct && matchesBusiness;
+  });
+};
+
+export const getInvoicesByBusiness = (business: string) => {
+  if (business === 'All') return mockInvoices;
+  return mockInvoices.filter(invoice => invoice.business === business);
+};
+
+export const calculateMarkup = (costPrice: number, sellingPrice: number): number => {
+  return ((sellingPrice - costPrice) / costPrice) * 100;
+};
+
+export const calculateSellingPrice = (costPrice: number, markupPercentage: number): number => {
+  return costPrice * (1 + markupPercentage / 100);
 };
