@@ -13,6 +13,7 @@ const customerSchema = z.object({
   name: z.string().min(2, 'Customer name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
   tags: z.string().optional(),
+  creditLimit: z.number().min(0, 'Credit limit must be positive').optional(),
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
@@ -28,6 +29,9 @@ export const CustomerForm = ({ onClose }: CustomerFormProps) => {
     formState: { errors },
   } = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
+    defaultValues: {
+      creditLimit: 0,
+    },
   });
 
   const onSubmit = (data: CustomerFormData) => {
@@ -54,7 +58,6 @@ export const CustomerForm = ({ onClose }: CustomerFormProps) => {
         </Button>
       </div>
 
-      {/* Customer Name */}
       <div className="space-y-2">
         <Label htmlFor="name">Customer Name *</Label>
         <Input
@@ -71,7 +74,6 @@ export const CustomerForm = ({ onClose }: CustomerFormProps) => {
         )}
       </div>
 
-      {/* Email */}
       <div className="space-y-2">
         <Label htmlFor="email">Email Address *</Label>
         <Input
@@ -89,7 +91,28 @@ export const CustomerForm = ({ onClose }: CustomerFormProps) => {
         )}
       </div>
 
-      {/* Tags */}
+      <div className="space-y-2">
+        <Label htmlFor="creditLimit">Credit Limit (R)</Label>
+        <Input
+          id="creditLimit"
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="0.00"
+          {...register('creditLimit', { valueAsNumber: true })}
+          aria-describedby={errors.creditLimit ? "creditLimit-error" : undefined}
+          className={errors.creditLimit ? "border-red-500" : ""}
+        />
+        {errors.creditLimit && (
+          <p id="creditLimit-error" className="text-sm text-red-600" role="alert">
+            {errors.creditLimit.message}
+          </p>
+        )}
+        <p className="text-xs text-slate-500">
+          Maximum amount this customer can owe you at one time
+        </p>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="tags">Tags (optional)</Label>
         <Input
@@ -102,7 +125,6 @@ export const CustomerForm = ({ onClose }: CustomerFormProps) => {
         </p>
       </div>
 
-      {/* Submit Buttons */}
       <div className="flex space-x-2 pt-4">
         <Button type="button" variant="outline" onClick={onClose} className="flex-1">
           Cancel

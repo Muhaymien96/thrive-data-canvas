@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, X } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import type { Business } from '@/components/AdminDashboard';
@@ -29,6 +30,20 @@ const transactionSchema = z.object({
   }),
   amount: z.number().positive('Amount must be positive'),
   customer: z.string().min(2, 'Customer name must be at least 2 characters'),
+  paymentStatus: z.enum(['paid', 'partial', 'pending']),
+  amountPaid: z.number().optional(),
+  dueDate: z.date().optional(),
+  creditTerms: z.number().min(1).max(90).optional(),
+}).refine((data) => {
+  if (data.paymentStatus === 'partial' && (!data.amountPaid || data.amountPaid >= data.amount)) {
+    return false;
+  }
+  if (data.type === 'credit' && data.paymentStatus !== 'paid' && !data.dueDate) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Please provide valid payment details',
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
@@ -49,18 +64,32 @@ export const TransactionForm = ({ onClose, defaultBusiness }: TransactionFormPro
     resolver: zodResolver(transactionSchema),
     defaultValues: {
       business: defaultBusiness !== 'All' ? defaultBusiness as 'Fish' | 'Honey' | 'Mushrooms' : undefined,
+      paymentStatus: 'paid',
     },
   });
 
   const selectedDate = watch('date');
   const selectedBusiness = watch('business');
   const selectedType = watch('type');
+  const paymentStatus = watch('paymentStatus');
+  const creditTerms = watch('creditTerms');
+  const amount = watch('amount');
+
+  React.useEffect(() => {
+    if (selectedType === 'credit' && creditTerms && selectedDate) {
+      setValue('dueDate', addDays(selectedDate, creditTerms));
+    }
+  }, [selectedType, creditTerms, selectedDate, setValue]);
 
   const onSubmit = (data: TransactionFormData) => {
     console.log('Transaction submitted:', data);
+    
+    const statusText = data.paymentStatus === 'paid' ? 'paid' : 
+                     data.paymentStatus === 'partial' ? 'partially paid' : 'pending payment';
+    
     toast({
-      title: "Transaction Added",
-      description: `Successfully added ${data.type} transaction for R${data.amount}`,
+      title: "Sale Recorded",
+      description: `Successfully added ${statusText} sale for R${data.amount}`,
     });
     onClose();
   };
@@ -68,7 +97,7 @@ export const TransactionForm = ({ onClose, defaultBusiness }: TransactionFormPro
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">Add Transaction</h3>
+        <h3 className="text-lg font-semibold text-slate-900">Record Sale</h3>
         <Button
           type="button"
           variant="ghost"
@@ -80,7 +109,6 @@ export const TransactionForm = ({ onClose, defaultBusiness }: TransactionFormPro
         </Button>
       </div>
 
-      {/* Business Selector */}
       <div className="space-y-2">
         <Label htmlFor="business">Business *</Label>
         <Select 
@@ -89,7 +117,6 @@ export const TransactionForm = ({ onClose, defaultBusiness }: TransactionFormPro
         >
           <SelectTrigger 
             id="business"
-            aria-describedby={errors.business ? "business-error" : undefined}
             className={errors.business ? "border-red-500" : ""}
           >
             <SelectValue placeholder={defaultBusiness === 'All' ? "Select business" : undefined} />
@@ -101,44 +128,37 @@ export const TransactionForm = ({ onClose, defaultBusiness }: TransactionFormPro
           </SelectContent>
         </Select>
         {errors.business && (
-          <p id="business-error" className="text-sm text-red-600" role="alert">
-            {errors.business.message}
-          </p>
+          <p className="text-sm text-red-600">{errors.business.message}</p>
         )}
       </div>
 
-      {/* Payment Type Radio Group */}
       <div className="space-y-3">
-        <Label htmlFor="payment-type">Payment Type *</Label>
+        <Label>Payment Method *</Label>
         <RadioGroup
           value={selectedType}
           onValueChange={(value) => setValue('type', value as any)}
           className="flex flex-col space-y-2"
-          aria-describedby={errors.type ? "type-error" : undefined}
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="cash" id="cash" />
-            <Label htmlFor="cash" className="cursor-pointer">Cash</Label>
+            <Label htmlFor="cash" className="cursor-pointer">Cash Payment</Label>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="yoco" id="yoco" />
-            <Label htmlFor="yoco" className="cursor-pointer">Yoco (Card)</Label>
+            <Label htmlFor="yoco" className="cursor-pointer">Card Payment (Yoco)</Label>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="credit" id="credit" />
-            <Label htmlFor="credit" className="cursor-pointer">Credit</Label>
+            <Label htmlFor="credit" className="cursor-pointer">Credit Sale (Pay Later)</Label>
           </div>
         </RadioGroup>
         {errors.type && (
-          <p id="type-error" className="text-sm text-red-600" role="alert">
-            {errors.type.message}
-          </p>
+          <p className="text-sm text-red-600">{errors.type.message}</p>
         )}
       </div>
 
-      {/* Date Picker */}
       <div className="space-y-2">
-        <Label htmlFor="date">Date *</Label>
+        <Label htmlFor="date">Sale Date *</Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -148,7 +168,6 @@ export const TransactionForm = ({ onClose, defaultBusiness }: TransactionFormPro
                 !selectedDate && "text-muted-foreground",
                 errors.date && "border-red-500"
               )}
-              aria-describedby={errors.date ? "date-error" : undefined}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
@@ -161,20 +180,16 @@ export const TransactionForm = ({ onClose, defaultBusiness }: TransactionFormPro
               onSelect={(date) => setValue('date', date!)}
               disabled={(date) => date > new Date()}
               initialFocus
-              className="pointer-events-auto"
             />
           </PopoverContent>
         </Popover>
         {errors.date && (
-          <p id="date-error" className="text-sm text-red-600" role="alert">
-            {errors.date.message}
-          </p>
+          <p className="text-sm text-red-600">{errors.date.message}</p>
         )}
       </div>
 
-      {/* Amount Input */}
       <div className="space-y-2">
-        <Label htmlFor="amount">Amount (R) *</Label>
+        <Label htmlFor="amount">Total Amount (R) *</Label>
         <Input
           id="amount"
           type="number"
@@ -182,40 +197,97 @@ export const TransactionForm = ({ onClose, defaultBusiness }: TransactionFormPro
           min="0"
           placeholder="0.00"
           {...register('amount', { valueAsNumber: true })}
-          aria-describedby={errors.amount ? "amount-error" : undefined}
           className={errors.amount ? "border-red-500" : ""}
         />
         {errors.amount && (
-          <p id="amount-error" className="text-sm text-red-600" role="alert">
-            {errors.amount.message}
-          </p>
+          <p className="text-sm text-red-600">{errors.amount.message}</p>
         )}
       </div>
 
-      {/* Customer Input */}
       <div className="space-y-2">
         <Label htmlFor="customer">Customer Name *</Label>
         <Input
           id="customer"
           placeholder="Enter customer name"
           {...register('customer')}
-          aria-describedby={errors.customer ? "customer-error" : undefined}
           className={errors.customer ? "border-red-500" : ""}
         />
         {errors.customer && (
-          <p id="customer-error" className="text-sm text-red-600" role="alert">
-            {errors.customer.message}
-          </p>
+          <p className="text-sm text-red-600">{errors.customer.message}</p>
         )}
       </div>
 
-      {/* Submit Buttons */}
+      {selectedType === 'credit' && (
+        <>
+          <div className="space-y-2">
+            <Label>Payment Status *</Label>
+            <RadioGroup
+              value={paymentStatus}
+              onValueChange={(value) => setValue('paymentStatus', value as any)}
+              className="flex flex-col space-y-2"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="pending" id="pending" />
+                <Label htmlFor="pending" className="cursor-pointer">Not Paid Yet</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="partial" id="partial" />
+                <Label htmlFor="partial" className="cursor-pointer">Partially Paid</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="paid" id="paid" />
+                <Label htmlFor="paid" className="cursor-pointer">Fully Paid</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {paymentStatus === 'partial' && (
+            <div className="space-y-2">
+              <Label htmlFor="amountPaid">Amount Received (R)</Label>
+              <Input
+                id="amountPaid"
+                type="number"
+                step="0.01"
+                min="0"
+                max={amount}
+                placeholder="0.00"
+                {...register('amountPaid', { valueAsNumber: true })}
+              />
+            </div>
+          )}
+
+          {paymentStatus !== 'paid' && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="creditTerms">Payment Terms (Days)</Label>
+                <Select 
+                  value={creditTerms?.toString()}
+                  onValueChange={(value) => setValue('creditTerms', parseInt(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment terms" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="14">14 days</SelectItem>
+                    <SelectItem value="21">21 days</SelectItem>
+                    <SelectItem value="30">30 days</SelectItem>
+                    <SelectItem value="60">60 days</SelectItem>
+                    <SelectItem value="90">90 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+        </>
+      )}
+
       <div className="flex space-x-2 pt-4">
         <Button type="button" variant="outline" onClick={onClose} className="flex-1">
           Cancel
         </Button>
         <Button type="submit" className="flex-1">
-          Add Transaction
+          Record Sale
         </Button>
       </div>
     </form>
