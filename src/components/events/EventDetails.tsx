@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EventChecklist } from './EventChecklist';
 import { CalendarIcon, MapPinIcon, ClockIcon, DollarSignIcon } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -28,7 +29,7 @@ export const EventDetails = ({ event, onClose }: EventDetailsProps) => {
   const profitMargin = event.totalRevenue > 0 ? ((profit / event.totalRevenue) * 100) : 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">{event.name}</h3>
         <Button variant="outline" size="sm" onClick={onClose}>
@@ -97,6 +98,11 @@ export const EventDetails = ({ event, onClose }: EventDetailsProps) => {
           <p className="text-sm text-slate-600">{event.notes}</p>
         </div>
       )}
+
+      {/* Event Checklist Section */}
+      <div className="pt-4 border-t">
+        <EventChecklist eventId={event.id} />
+      </div>
     </div>
   );
 };
