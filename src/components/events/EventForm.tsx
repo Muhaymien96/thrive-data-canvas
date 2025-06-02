@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, Upload, X } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { Business } from '@/components/AdminDashboard';
@@ -30,27 +30,15 @@ export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormP
     endTime: '',
   });
 
-  const [complianceDocuments, setComplianceDocuments] = useState<File[]>([]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Event data:', formData);
-    console.log('Compliance documents:', complianceDocuments);
     // Here you would typically save the event to your data store
     onClose();
   };
 
   const handleInputChange = (field: string, value: string | Date) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setComplianceDocuments(prev => [...prev, ...files]);
-  };
-
-  const removeDocument = (index: number) => {
-    setComplianceDocuments(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -175,53 +163,6 @@ export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormP
             placeholder="Additional notes about the event..."
             rows={3}
           />
-        </div>
-
-        {/* Compliance Documents Section */}
-        <div className="space-y-4">
-          <Label>Compliance Documents</Label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-            <div className="text-center">
-              <Upload className="mx-auto h-8 w-8 text-gray-400" />
-              <div className="mt-2">
-                <label htmlFor="file-upload" className="cursor-pointer">
-                  <span className="text-sm text-blue-600 hover:text-blue-500">
-                    Upload compliance documents
-                  </span>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    multiple
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    onChange={handleFileUpload}
-                    className="sr-only"
-                  />
-                </label>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                PDF, DOC, DOCX, JPG, PNG up to 10MB each
-              </p>
-            </div>
-          </div>
-
-          {complianceDocuments.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Uploaded Documents:</h4>
-              {complianceDocuments.map((file, index) => (
-                <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                  <span className="text-sm text-gray-700">{file.name}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeDocument(index)}
-                  >
-                    <X size={16} />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         <div className="flex justify-end space-x-4 pt-4">

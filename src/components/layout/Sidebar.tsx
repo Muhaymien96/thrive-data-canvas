@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import {
   Users,
   Package,
   Calendar,
+  FileText,
   ArrowLeft,
   ArrowRight
 } from 'lucide-react';
@@ -28,6 +28,7 @@ const navigationItems = [
   { id: 'customers' as ViewType, label: 'Customers', icon: Users },
   { id: 'products' as ViewType, label: 'Products', icon: Package },
   { id: 'events' as ViewType, label: 'Events', icon: Calendar },
+  { id: 'compliance' as ViewType, label: 'Compliance', icon: FileText },
 ];
 
 export const Sidebar = ({ currentView, onViewChange, collapsed, onToggleCollapse }: SidebarProps) => {
