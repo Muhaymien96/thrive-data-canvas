@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,7 +46,10 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <TransactionForm onClose={() => setShowForm(false)} />
+            <TransactionForm 
+              onClose={() => setShowForm(false)} 
+              defaultBusiness={selectedBusiness}
+            />
           </div>
         </div>
       )}

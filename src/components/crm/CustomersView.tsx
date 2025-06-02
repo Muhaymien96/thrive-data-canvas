@@ -1,14 +1,15 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { CustomerForm } from './CustomerForm';
 import { mockCustomers } from '@/lib/mockData';
 import { Search, Plus } from 'lucide-react';
 
 export const CustomersView = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showForm, setShowForm] = useState(false);
 
   const filteredCustomers = mockCustomers.filter(customer =>
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -20,11 +21,23 @@ export const CustomersView = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-slate-900">Customers</h2>
-        <Button className="flex items-center space-x-2">
+        <Button 
+          onClick={() => setShowForm(true)}
+          className="flex items-center space-x-2"
+        >
           <Plus size={16} />
           <span>Add Customer</span>
         </Button>
       </div>
+
+      {/* Customer Form Modal */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <CustomerForm onClose={() => setShowForm(false)} />
+          </div>
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative">

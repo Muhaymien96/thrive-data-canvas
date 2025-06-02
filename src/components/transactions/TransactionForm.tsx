@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,6 +13,7 @@ import { CalendarIcon, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import type { Business } from '@/components/AdminDashboard';
 
 const transactionSchema = z.object({
   business: z.enum(['Fish', 'Honey', 'Mushrooms'], {
@@ -35,9 +35,10 @@ type TransactionFormData = z.infer<typeof transactionSchema>;
 
 interface TransactionFormProps {
   onClose: () => void;
+  defaultBusiness?: Business;
 }
 
-export const TransactionForm = ({ onClose }: TransactionFormProps) => {
+export const TransactionForm = ({ onClose, defaultBusiness }: TransactionFormProps) => {
   const {
     register,
     handleSubmit,
@@ -46,6 +47,9 @@ export const TransactionForm = ({ onClose }: TransactionFormProps) => {
     formState: { errors },
   } = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
+    defaultValues: {
+      business: defaultBusiness !== 'All' ? defaultBusiness as 'Fish' | 'Honey' | 'Mushrooms' : undefined,
+    },
   });
 
   const selectedDate = watch('date');
@@ -79,13 +83,16 @@ export const TransactionForm = ({ onClose }: TransactionFormProps) => {
       {/* Business Selector */}
       <div className="space-y-2">
         <Label htmlFor="business">Business *</Label>
-        <Select onValueChange={(value) => setValue('business', value as any)}>
+        <Select 
+          value={selectedBusiness}
+          onValueChange={(value) => setValue('business', value as any)}
+        >
           <SelectTrigger 
             id="business"
             aria-describedby={errors.business ? "business-error" : undefined}
             className={errors.business ? "border-red-500" : ""}
           >
-            <SelectValue placeholder="Select business" />
+            <SelectValue placeholder={defaultBusiness === 'All' ? "Select business" : undefined} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="Fish">Fish</SelectItem>
