@@ -1,3 +1,4 @@
+
 export interface Transaction {
   id: number;
   date: string;
@@ -41,6 +42,17 @@ export interface OutstandingPayment {
   daysPastDue: number;
   business: 'Fish' | 'Honey' | 'Mushrooms';
   description: string;
+}
+
+export interface SupplierTransaction {
+  id: number;
+  date: string;
+  business: 'Fish' | 'Honey' | 'Mushrooms';
+  type: 'purchase' | 'payment';
+  amount: number;
+  description: string;
+  status: 'completed' | 'pending';
+  invoiceNumber?: string;
 }
 
 export const mockTransactions: Transaction[] = [
@@ -198,6 +210,86 @@ export const mockOutstandingPayments: OutstandingPayment[] = [
   }
 ];
 
+export const mockSupplierTransactions: SupplierTransaction[] = [
+  {
+    id: 1,
+    date: '2025-05-25',
+    business: 'Fish',
+    type: 'purchase',
+    amount: 2500,
+    description: 'Fresh Fish Supply - 50kg Premium Catch',
+    status: 'pending',
+    invoiceNumber: 'INV-2025-001'
+  },
+  {
+    id: 2,
+    date: '2025-05-20',
+    business: 'Honey',
+    type: 'purchase',
+    amount: 850,
+    description: 'Raw Honey Supply - 25L Premium Grade',
+    status: 'completed',
+    invoiceNumber: 'INV-2025-002'
+  },
+  {
+    id: 3,
+    date: '2025-05-22',
+    business: 'Mushrooms',
+    type: 'purchase',
+    amount: 1800,
+    description: 'Organic Mushroom Variety Pack - 40kg',
+    status: 'pending',
+    invoiceNumber: 'INV-2025-003'
+  },
+  {
+    id: 4,
+    date: '2025-05-15',
+    business: 'Fish',
+    type: 'payment',
+    amount: 2200,
+    description: 'Payment for previous fish order',
+    status: 'completed'
+  },
+  {
+    id: 5,
+    date: '2025-05-18',
+    business: 'Honey',
+    type: 'payment',
+    amount: 750,
+    description: 'Payment for honey supply',
+    status: 'completed'
+  },
+  {
+    id: 6,
+    date: '2025-05-12',
+    business: 'Mushrooms',
+    type: 'payment',
+    amount: 1600,
+    description: 'Payment for mushroom order',
+    status: 'completed'
+  },
+  {
+    id: 7,
+    date: '2025-05-10',
+    business: 'Fish',
+    type: 'purchase',
+    amount: 3000,
+    description: 'Premium Seafood Selection - 60kg',
+    status: 'completed',
+    invoiceNumber: 'INV-2025-004'
+  },
+  {
+    id: 8,
+    date: '2025-05-08',
+    business: 'Honey',
+    type: 'purchase',
+    amount: 920,
+    description: 'Wildflower Honey - 30L',
+    status: 'completed',
+    invoiceNumber: 'INV-2025-005'
+  }
+];
+
 export const getMonthlyRevenue = (business?: string) => {
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
@@ -222,4 +314,37 @@ export const getBusinessMetrics = (business: string) => {
     averageTransaction: businessTransactions.length > 0 ? totalSales / businessTransactions.length : 0,
     recentTransactions: businessTransactions.slice(0, 5)
   };
+};
+
+export const getSupplierTransactions = (supplierName: string, business?: string) => {
+  return mockSupplierTransactions.filter(transaction => {
+    const matchesBusiness = !business || business === 'All' || transaction.business === business;
+    return matchesBusiness;
+  });
+};
+
+export const getSuppliersByBusiness = (business: string) => {
+  if (business === 'All') return mockSuppliers;
+  
+  const businessToProductType = {
+    'Fish': 'Fresh Fish',
+    'Honey': 'Raw Honey',
+    'Mushrooms': 'Organic Mushrooms'
+  };
+  
+  return mockSuppliers.filter(supplier => 
+    supplier.productType === businessToProductType[business as keyof typeof businessToProductType]
+  );
+};
+
+export const getCustomersByBusiness = (business: string) => {
+  if (business === 'All') return mockCustomers;
+  
+  const businessCustomers = mockTransactions
+    .filter(transaction => transaction.business === business)
+    .map(transaction => transaction.customer);
+  
+  return mockCustomers.filter(customer => 
+    businessCustomers.includes(customer.name)
+  );
 };
