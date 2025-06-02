@@ -6,6 +6,7 @@ import { ProductForm } from './ProductForm';
 import { ProductTable } from './ProductTable';
 import { StockMovements } from './StockMovements';
 import { InvoiceGenerator } from './InvoiceGenerator';
+import { StockNotifications } from './StockNotifications';
 import { getProductsByBusiness } from '@/lib/mockData';
 import { Plus, Package, TrendingUp, FileText } from 'lucide-react';
 import type { Business } from '@/components/AdminDashboard';
@@ -33,6 +34,9 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
           <span>Add Product</span>
         </Button>
       </div>
+
+      {/* Stock Notifications */}
+      <StockNotifications selectedBusiness={selectedBusiness} />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
