@@ -105,6 +105,19 @@ export interface InvoiceItem {
   total: number;
 }
 
+export interface Event {
+  id: number;
+  name: string;
+  location: string;
+  date: string;
+  business: Business;
+  marketCost: number;
+  totalRevenue: number;
+  notes?: string;
+  startTime?: string;
+  endTime?: string;
+}
+
 export const mockTransactions: Transaction[] = [
   { id: 1, date: '2025-06-01', business: 'Honey', type: 'yoco', amount: 1500, customer: 'Farmers Market', paymentStatus: 'paid' },
   { id: 2, date: '2025-06-01', business: 'Fish', type: 'cash', amount: 2500, customer: 'Ocean Fresh Restaurant', paymentStatus: 'paid' },
@@ -520,6 +533,57 @@ export const mockInvoices: Invoice[] = [
   }
 ];
 
+export const mockEvents: Event[] = [
+  {
+    id: 1,
+    name: 'Weekend Farmers Market',
+    location: 'Central Park Market',
+    date: '2024-06-01',
+    business: 'Fish',
+    marketCost: 150,
+    totalRevenue: 850,
+    notes: 'Great turnout, sold out of salmon',
+    startTime: '08:00',
+    endTime: '16:00',
+  },
+  {
+    id: 2,
+    name: 'Organic Market Day',
+    location: 'Green Valley Mall',
+    date: '2024-06-08',
+    business: 'Honey',
+    marketCost: 100,
+    totalRevenue: 450,
+    notes: 'New customers interested in raw honey',
+    startTime: '09:00',
+    endTime: '15:00',
+  },
+  {
+    id: 3,
+    name: 'Community Market',
+    location: 'Town Square',
+    date: '2024-06-15',
+    business: 'Mushrooms',
+    marketCost: 75,
+    totalRevenue: 320,
+    notes: 'Shiitake mushrooms were popular',
+    startTime: '07:00',
+    endTime: '14:00',
+  },
+  {
+    id: 4,
+    name: 'Holiday Market',
+    location: 'Downtown Plaza',
+    date: '2024-06-22',
+    business: 'Fish',
+    marketCost: 200,
+    totalRevenue: 1200,
+    notes: 'Best sales day so far',
+    startTime: '08:30',
+    endTime: '17:00',
+  },
+];
+
 export const getMonthlyRevenue = (business?: string) => {
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
@@ -604,4 +668,11 @@ export const calculateMarkup = (costPrice: number, sellingPrice: number): number
 
 export const calculateSellingPrice = (costPrice: number, markupPercentage: number): number => {
   return costPrice * (1 + markupPercentage / 100);
+};
+
+export const getEventsByBusiness = (business: Business): Event[] => {
+  if (business === 'All') {
+    return mockEvents;
+  }
+  return mockEvents.filter(event => event.business === business);
 };

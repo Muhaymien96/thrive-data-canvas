@@ -8,9 +8,10 @@ import { TransactionsView } from '@/components/transactions/TransactionsView';
 import { SuppliersView } from '@/components/crm/SuppliersView';
 import { CustomersView } from '@/components/crm/CustomersView';
 import { ProductsView } from '@/components/products/ProductsView';
+import { EventsView } from '@/components/events/EventsView';
 
 export type Business = 'Fish' | 'Honey' | 'Mushrooms' | 'All';
-export type ViewType = 'dashboard' | 'transactions' | 'suppliers' | 'customers' | 'products';
+export type ViewType = 'dashboard' | 'transactions' | 'suppliers' | 'customers' | 'products' | 'events';
 
 export const AdminDashboard = () => {
   const [selectedBusiness, setSelectedBusiness] = useState<Business>('Fish');
@@ -31,6 +32,8 @@ export const AdminDashboard = () => {
         return <CustomersView selectedBusiness={selectedBusiness} />;
       case 'products':
         return <ProductsView selectedBusiness={selectedBusiness} />;
+      case 'events':
+        return <EventsView selectedBusiness={selectedBusiness} />;
       default:
         return <DashboardOverview selectedBusiness={selectedBusiness} />;
     }
