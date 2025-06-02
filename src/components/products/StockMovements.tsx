@@ -63,7 +63,7 @@ export const StockMovements = ({ selectedBusiness }: StockMovementsProps) => {
                     {getProductName(movement.productId)}
                   </div>
                   <div className="text-sm text-slate-500">
-                    {movement.description || movement.notes}
+                    {movement.notes}
                   </div>
                   <div className="text-xs text-slate-400 mt-1">
                     Reference: {movement.reference}
