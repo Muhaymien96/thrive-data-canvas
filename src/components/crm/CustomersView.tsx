@@ -1,0 +1,88 @@
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { mockCustomers } from '@/lib/mockData';
+import { Search, Plus } from 'lucide-react';
+
+export const CustomersView = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredCustomers = mockCustomers.filter(customer =>
+    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-slate-900">Customers</h2>
+        <Button className="flex items-center space-x-2">
+          <Plus size={16} />
+          <span>Add Customer</span>
+        </Button>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+        <Input
+          placeholder="Search customers by name, email, or tags..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* Customers Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Customer Directory</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="text-left py-3 px-4 font-medium text-slate-600">Name</th>
+                  <th className="text-left py-3 px-4 font-medium text-slate-600">Email</th>
+                  <th className="text-left py-3 px-4 font-medium text-slate-600">Total Purchases</th>
+                  <th className="text-left py-3 px-4 font-medium text-slate-600">Last Purchase</th>
+                  <th className="text-left py-3 px-4 font-medium text-slate-600">Tags</th>
+                  <th className="text-left py-3 px-4 font-medium text-slate-600">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCustomers.map((customer) => (
+                  <tr key={customer.id} className="border-b border-slate-100 hover:bg-slate-50">
+                    <td className="py-3 px-4 text-sm font-medium">{customer.name}</td>
+                    <td className="py-3 px-4 text-sm">{customer.email}</td>
+                    <td className="py-3 px-4 text-sm font-medium">R{customer.totalPurchases.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-sm">{customer.lastPurchase}</td>
+                    <td className="py-3 px-4 text-sm">
+                      <div className="flex flex-wrap gap-1">
+                        {customer.tags.map((tag) => (
+                          <Badge key={tag} variant="secondary" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-sm">
+                      <Button variant="outline" size="sm">
+                        View Details
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
