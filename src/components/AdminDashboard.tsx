@@ -8,7 +8,7 @@ import { TransactionsView } from '@/components/transactions/TransactionsView';
 import { SuppliersView } from '@/components/crm/SuppliersView';
 import { CustomersView } from '@/components/crm/CustomersView';
 
-export type Business = 'Fish' | 'Honey' | 'Mushrooms';
+export type Business = 'Fish' | 'Honey' | 'Mushrooms' | 'All';
 export type ViewType = 'dashboard' | 'transactions' | 'suppliers' | 'customers';
 
 export const AdminDashboard = () => {
@@ -21,7 +21,7 @@ export const AdminDashboard = () => {
       case 'dashboard':
         return selectedBusiness === 'All' ? 
           <DashboardOverview selectedBusiness={selectedBusiness} /> :
-          <BusinessView business={selectedBusiness} />;
+          <BusinessView business={selectedBusiness as 'Fish' | 'Honey' | 'Mushrooms'} />;
       case 'transactions':
         return <TransactionsView selectedBusiness={selectedBusiness} />;
       case 'suppliers':

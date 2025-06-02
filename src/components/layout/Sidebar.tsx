@@ -3,10 +3,10 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { 
-  Dashboard,
-  Transactions,
-  Supplier,
-  Customer,
+  LayoutDashboard,
+  Receipt,
+  Truck,
+  Users,
   ArrowLeft,
   ArrowRight
 } from 'lucide-react';
@@ -20,10 +20,10 @@ interface SidebarProps {
 }
 
 const navigationItems = [
-  { id: 'dashboard' as ViewType, label: 'Dashboard', icon: Dashboard },
-  { id: 'transactions' as ViewType, label: 'Transactions', icon: Transactions },
-  { id: 'suppliers' as ViewType, label: 'Suppliers', icon: Supplier },
-  { id: 'customers' as ViewType, label: 'Customers', icon: Customer },
+  { id: 'dashboard' as ViewType, label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'transactions' as ViewType, label: 'Transactions', icon: Receipt },
+  { id: 'suppliers' as ViewType, label: 'Suppliers', icon: Truck },
+  { id: 'customers' as ViewType, label: 'Customers', icon: Users },
 ];
 
 export const Sidebar = ({ currentView, onViewChange, collapsed, onToggleCollapse }: SidebarProps) => {
