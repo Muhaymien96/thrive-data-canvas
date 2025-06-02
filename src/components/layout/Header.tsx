@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -39,28 +38,26 @@ export const Header = ({ selectedBusiness, onBusinessChange, currentView }: Head
         </div>
         
         <div className="flex items-center space-x-4">
-          {currentView === 'dashboard' && (
-            <div className="flex items-center space-x-2">
-              <label htmlFor="business-select" className="text-sm font-medium text-slate-700">
-                Business:
-              </label>
-              <Select
-                value={selectedBusiness}
-                onValueChange={(value) => onBusinessChange(value as Business)}
-              >
-                <SelectTrigger id="business-select" className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {businesses.map((business) => (
-                    <SelectItem key={business} value={business}>
-                      {business}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="flex items-center space-x-2">
+            <label htmlFor="business-select" className="text-sm font-medium text-slate-700">
+              Business:
+            </label>
+            <Select
+              value={selectedBusiness}
+              onValueChange={(value) => onBusinessChange(value as Business)}
+            >
+              <SelectTrigger id="business-select" className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {businesses.map((business) => (
+                  <SelectItem key={business} value={business}>
+                    {business}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
     </header>

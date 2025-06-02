@@ -25,9 +25,9 @@ export const AdminDashboard = () => {
       case 'transactions':
         return <TransactionsView selectedBusiness={selectedBusiness} />;
       case 'suppliers':
-        return <SuppliersView />;
+        return <SuppliersView selectedBusiness={selectedBusiness} />;
       case 'customers':
-        return <CustomersView />;
+        return <CustomersView selectedBusiness={selectedBusiness} />;
       default:
         return <DashboardOverview selectedBusiness={selectedBusiness} />;
     }

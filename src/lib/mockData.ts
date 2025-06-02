@@ -1,4 +1,3 @@
-
 export interface Transaction {
   id: number;
   date: string;
@@ -55,6 +54,9 @@ export const mockTransactions: Transaction[] = [
   { id: 8, date: '2025-05-29', business: 'Fish', type: 'cash', amount: 1800, customer: 'Harbor Grill', paymentStatus: 'paid' },
   { id: 9, date: '2025-05-28', business: 'Mushrooms', type: 'yoco', amount: 600, customer: 'Organic Market', paymentStatus: 'paid' },
   { id: 10, date: '2025-05-28', business: 'Honey', type: 'yoco', amount: 1100, customer: 'Artisan Foods', paymentStatus: 'paid' },
+  { id: 11, date: '2025-05-25', business: 'Fish', type: 'credit', amount: 2500, customer: 'Atlantic Fisheries', paymentStatus: 'pending', dueDate: '2025-06-25' },
+  { id: 12, date: '2025-05-22', business: 'Mushrooms', type: 'credit', amount: 1800, customer: 'Forest Floor Farms', paymentStatus: 'pending', dueDate: '2025-06-12' },
+  { id: 13, date: '2025-05-20', business: 'Honey', type: 'cash', amount: 850, customer: 'Golden Hive Apiaries', paymentStatus: 'paid' },
 ];
 
 export const mockSuppliers: Supplier[] = [
