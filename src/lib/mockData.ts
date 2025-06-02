@@ -1,3 +1,5 @@
+export type Business = 'Fish' | 'Honey' | 'Mushrooms';
+
 export interface Transaction {
   id: number;
   date: string;
@@ -670,7 +672,7 @@ export const calculateSellingPrice = (costPrice: number, markupPercentage: numbe
   return costPrice * (1 + markupPercentage / 100);
 };
 
-export const getEventsByBusiness = (business: Business): Event[] => {
+export const getEventsByBusiness = (business: Business | 'All'): Event[] => {
   if (business === 'All') {
     return mockEvents;
   }
