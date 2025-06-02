@@ -5,18 +5,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { CustomerForm } from './CustomerForm';
-import { mockCustomers } from '@/lib/mockData';
-import { Search, ArrowUp } from 'lucide-react';
+import { CustomerDetails } from './CustomerDetails';
+import { mockCustomers, Customer } from '@/lib/mockData';
+import { Search, ArrowUp, Eye } from 'lucide-react';
 
 export const CustomersView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const filteredCustomers = mockCustomers.filter(customer =>
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const handleViewDetails = (customer: Customer) => {
+    setSelectedCustomer(customer);
+  };
 
   return (
     <div className="space-y-6">
@@ -38,6 +44,12 @@ export const CustomersView = () => {
           </div>
         </div>
       )}
+
+      <CustomerDetails 
+        customer={selectedCustomer}
+        isOpen={!!selectedCustomer}
+        onClose={() => setSelectedCustomer(null)}
+      />
 
       <div className="relative">
         <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
@@ -95,7 +107,13 @@ export const CustomersView = () => {
                       </div>
                     </td>
                     <td className="py-3 px-4 text-sm">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewDetails(customer)}
+                        className="flex items-center gap-2"
+                      >
+                        <Eye size={14} />
                         View Details
                       </Button>
                     </td>
