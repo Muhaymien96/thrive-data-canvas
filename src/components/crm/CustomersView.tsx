@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { CustomerForm } from './CustomerForm';
 import { CustomerDetails } from './CustomerDetails';
+import { PaymentNotifications } from '@/components/notifications/PaymentNotifications';
 import { mockCustomers, Customer } from '@/lib/mockData';
 import { Search, ArrowUp, Eye } from 'lucide-react';
 
@@ -36,6 +37,8 @@ export const CustomersView = () => {
           <span>Add Customer</span>
         </Button>
       </div>
+
+      <PaymentNotifications context="customers" />
 
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SupplierForm } from './SupplierForm';
+import { PaymentNotifications } from '@/components/notifications/PaymentNotifications';
 import { mockSuppliers } from '@/lib/mockData';
 import { Plus, Search } from 'lucide-react';
 
@@ -39,6 +40,8 @@ export const SuppliersView = () => {
           <span>Add Supplier</span>
         </Button>
       </div>
+
+      <PaymentNotifications context="suppliers" />
 
       {/* Search */}
       <div className="relative">
