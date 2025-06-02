@@ -7,7 +7,6 @@ import { BusinessView } from '@/components/dashboard/BusinessView';
 import { TransactionsView } from '@/components/transactions/TransactionsView';
 import { SuppliersView } from '@/components/crm/SuppliersView';
 import { CustomersView } from '@/components/crm/CustomersView';
-import { PaymentNotifications } from '@/components/notifications/PaymentNotifications';
 
 export type Business = 'Fish' | 'Honey' | 'Mushrooms' | 'All';
 export type ViewType = 'dashboard' | 'transactions' | 'suppliers' | 'customers';
@@ -49,7 +48,6 @@ export const AdminDashboard = () => {
           currentView={currentView}
         />
         <main className="flex-1 p-6">
-          <PaymentNotifications />
           {renderCurrentView()}
         </main>
       </div>
