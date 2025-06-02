@@ -1,3 +1,4 @@
+
 export type Business = 'Fish' | 'Honey' | 'Mushrooms';
 
 export interface Transaction {
@@ -118,6 +119,18 @@ export interface Event {
   notes?: string;
   startTime?: string;
   endTime?: string;
+}
+
+export interface ComplianceDocument {
+  id: number;
+  name: string;
+  type: 'certificate' | 'license' | 'permit' | 'insurance' | 'other';
+  business: Business | 'All';
+  uploadDate: string;
+  expiryDate?: string;
+  status: 'active' | 'expired' | 'expiring-soon';
+  fileUrl?: string;
+  notes?: string;
 }
 
 export const mockTransactions: Transaction[] = [
@@ -540,7 +553,7 @@ export const mockEvents: Event[] = [
     id: 1,
     name: 'Weekend Farmers Market',
     location: 'Central Park Market Square',
-    date: '2024-06-08',
+    date: '2025-06-08',
     business: 'Fish' as Business,
     marketCost: 150.00,
     totalRevenue: 850.00,
@@ -552,7 +565,7 @@ export const mockEvents: Event[] = [
     id: 2,
     name: 'Artisan Food Festival',
     location: 'Riverside Convention Center',
-    date: '2024-06-15',
+    date: '2025-06-15',
     business: 'Honey' as Business,
     marketCost: 250.00,
     totalRevenue: 1200.00,
@@ -564,7 +577,7 @@ export const mockEvents: Event[] = [
     id: 3,
     name: 'Community Market Day',
     location: 'Town Hall Parking Lot',
-    date: '2024-06-22',
+    date: '2025-06-22',
     business: 'Mushrooms' as Business,
     marketCost: 75.00,
     totalRevenue: 420.00,
@@ -572,6 +585,61 @@ export const mockEvents: Event[] = [
     startTime: '08:00',
     endTime: '13:00',
   },
+  {
+    id: 4,
+    name: 'Organic Food Expo',
+    location: 'Convention Center West',
+    date: '2025-06-10',
+    business: 'Mushrooms' as Business,
+    marketCost: 300.00,
+    totalRevenue: 1500.00,
+    notes: 'Large expo with multiple vendors. Great opportunity to showcase our premium mushroom varieties.',
+    startTime: '09:00',
+    endTime: '17:00',
+  },
+];
+
+export const mockComplianceDocuments: ComplianceDocument[] = [
+  {
+    id: 1,
+    name: 'Food Safety Certificate',
+    type: 'certificate',
+    business: 'All',
+    uploadDate: '2025-01-15',
+    expiryDate: '2026-01-15',
+    status: 'active',
+    notes: 'Valid for all food handling operations'
+  },
+  {
+    id: 2,
+    name: 'Fishing License',
+    type: 'license',
+    business: 'Fish',
+    uploadDate: '2025-03-01',
+    expiryDate: '2025-12-31',
+    status: 'expiring-soon',
+    notes: 'Commercial fishing operations license'
+  },
+  {
+    id: 3,
+    name: 'Organic Certification',
+    type: 'certificate',
+    business: 'Mushrooms',
+    uploadDate: '2025-02-10',
+    expiryDate: '2026-02-10',
+    status: 'active',
+    notes: 'Certified organic growing practices'
+  },
+  {
+    id: 4,
+    name: 'Public Liability Insurance',
+    type: 'insurance',
+    business: 'All',
+    uploadDate: '2024-12-01',
+    expiryDate: '2025-05-15',
+    status: 'expired',
+    notes: 'Coverage for market stalls and events'
+  }
 ];
 
 export const getMonthlyRevenue = (business?: string) => {
@@ -665,4 +733,11 @@ export const getEventsByBusiness = (business: Business | 'All'): Event[] => {
     return mockEvents;
   }
   return mockEvents.filter(event => event.business === business);
+};
+
+export const getComplianceDocumentsByBusiness = (business: Business | 'All'): ComplianceDocument[] => {
+  if (business === 'All') {
+    return mockComplianceDocuments;
+  }
+  return mockComplianceDocuments.filter(doc => doc.business === business || doc.business === 'All');
 };

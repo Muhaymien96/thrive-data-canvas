@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -24,6 +25,7 @@ const viewTitles: Record<ViewType, string> = {
   customers: 'Customers',
   products: 'Products',
   events: 'Events',
+  compliance: 'Compliance',
 };
 
 export const Header = ({ selectedBusiness, onBusinessChange, currentView }: HeaderProps) => {
