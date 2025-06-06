@@ -25,6 +25,7 @@ export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormP
     date: selectedDate || new Date(),
     business: defaultBusiness === 'All' ? 'Fish' : defaultBusiness,
     marketCost: '',
+    totalRevenue: '',
     notes: '',
     startTime: '',
     endTime: '',
@@ -39,6 +40,12 @@ export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormP
 
   const handleInputChange = (field: string, value: string | Date) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const calculateProfit = () => {
+    const revenue = parseFloat(formData.totalRevenue) || 0;
+    const cost = parseFloat(formData.marketCost) || 0;
+    return revenue - cost;
   };
 
   return (
@@ -123,7 +130,7 @@ export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormP
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <Label htmlFor="business">Business *</Label>
             <Select
@@ -152,7 +159,36 @@ export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormP
               placeholder="0.00"
             />
           </div>
+
+          <div>
+            <Label htmlFor="totalRevenue">Total Revenue (R)</Label>
+            <Input
+              id="totalRevenue"
+              type="number"
+              step="0.01"
+              value={formData.totalRevenue}
+              onChange={(e) => handleInputChange('totalRevenue', e.target.value)}
+              placeholder="0.00"
+            />
+          </div>
         </div>
+
+        {/* Profit Calculation Display */}
+        {(formData.marketCost || formData.totalRevenue) && (
+          <div className="bg-slate-50 p-4 rounded-lg">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-slate-600">Expected Profit:</span>
+              <span className={`font-medium ${calculateProfit() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                R{calculateProfit().toFixed(2)}
+              </span>
+            </div>
+            {formData.marketCost && formData.totalRevenue && (
+              <div className="text-xs text-slate-500 mt-1">
+                Profit Margin: {((calculateProfit() / (parseFloat(formData.totalRevenue) || 1)) * 100).toFixed(1)}%
+              </div>
+            )}
+          </div>
+        )}
 
         <div>
           <Label htmlFor="notes">Notes</Label>

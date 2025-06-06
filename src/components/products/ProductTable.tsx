@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Edit, AlertTriangle } from 'lucide-react';
+import { Edit, AlertTriangle, Search } from 'lucide-react';
 import { ProductEditDialog } from './ProductEditDialog';
 import type { Product } from '@/lib/mockData';
 import type { Business } from '@/components/AdminDashboard';
@@ -16,6 +17,13 @@ interface ProductTableProps {
 export const ProductTable = ({ products }: ProductTableProps) => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.supplier.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const getStockStatus = (currentStock: number, minStockLevel: number) => {
     if (currentStock === 0) {
@@ -51,7 +59,18 @@ export const ProductTable = ({ products }: ProductTableProps) => {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Product Inventory</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Product Inventory</CardTitle>
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -69,7 +88,7 @@ export const ProductTable = ({ products }: ProductTableProps) => {
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => {
+                {filteredProducts.map((product) => {
                   const stockStatus = getStockStatus(product.currentStock, product.minStockLevel);
                   const expiringSoon = isExpiringSoon(product.expiryDate);
                   
@@ -121,10 +140,10 @@ export const ProductTable = ({ products }: ProductTableProps) => {
                     </tr>
                   );
                 })}
-                {products.length === 0 && (
+                {filteredProducts.length === 0 && (
                   <tr>
                     <td colSpan={8} className="py-8 px-4 text-center text-slate-500">
-                      No products found. Add your first product to get started.
+                      {searchTerm ? `No products found matching "${searchTerm}"` : 'No products found. Add your first product to get started.'}
                     </td>
                   </tr>
                 )}

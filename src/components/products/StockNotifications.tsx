@@ -2,8 +2,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Package, Clock } from 'lucide-react';
+import { AlertTriangle, Package, Clock, ShoppingCart, Edit } from 'lucide-react';
 import { getProductsByBusiness } from '@/lib/mockData';
 import type { Business } from '@/components/AdminDashboard';
 
@@ -25,6 +26,16 @@ export const StockNotifications = ({ selectedBusiness }: StockNotificationsProps
   });
 
   const criticalAlerts = outOfStockProducts.length + lowStockProducts.length + expiringSoonProducts.length;
+
+  const handleReorderProduct = (productName: string) => {
+    console.log(`Reordering ${productName}`);
+    // TODO: Implement reorder functionality
+  };
+
+  const handleEditProduct = (productName: string) => {
+    console.log(`Editing ${productName}`);
+    // TODO: Implement edit product functionality
+  };
 
   if (criticalAlerts === 0) {
     return (
@@ -62,11 +73,33 @@ export const StockNotifications = ({ selectedBusiness }: StockNotificationsProps
           <Alert className="border-red-200 bg-red-50">
             <AlertTriangle className="h-4 w-4 text-red-600" />
             <AlertDescription>
-              <div className="font-medium text-red-800 mb-2">Out of Stock ({outOfStockProducts.length})</div>
-              <div className="space-y-1">
+              <div className="font-medium text-red-800 mb-3">Out of Stock ({outOfStockProducts.length})</div>
+              <div className="space-y-2">
                 {outOfStockProducts.map(product => (
-                  <div key={product.id} className="text-sm text-red-700">
-                    • {product.name} - {product.supplier}
+                  <div key={product.id} className="flex items-center justify-between bg-white p-2 rounded border">
+                    <div className="text-sm text-red-700">
+                      <div className="font-medium">{product.name}</div>
+                      <div className="text-xs opacity-75">{product.supplier}</div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-7 text-xs"
+                        onClick={() => handleReorderProduct(product.name)}
+                      >
+                        <ShoppingCart className="h-3 w-3 mr-1" />
+                        Reorder
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-7 text-xs"
+                        onClick={() => handleEditProduct(product.name)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -79,11 +112,35 @@ export const StockNotifications = ({ selectedBusiness }: StockNotificationsProps
           <Alert className="border-orange-200 bg-orange-50">
             <AlertTriangle className="h-4 w-4 text-orange-600" />
             <AlertDescription>
-              <div className="font-medium text-orange-800 mb-2">Low Stock ({lowStockProducts.length})</div>
-              <div className="space-y-1">
+              <div className="font-medium text-orange-800 mb-3">Low Stock ({lowStockProducts.length})</div>
+              <div className="space-y-2">
                 {lowStockProducts.map(product => (
-                  <div key={product.id} className="text-sm text-orange-700">
-                    • {product.name} - {product.currentStock} {product.unit} remaining (Min: {product.minStockLevel})
+                  <div key={product.id} className="flex items-center justify-between bg-white p-2 rounded border">
+                    <div className="text-sm text-orange-700">
+                      <div className="font-medium">{product.name}</div>
+                      <div className="text-xs opacity-75">
+                        {product.currentStock} {product.unit} remaining (Min: {product.minStockLevel})
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-7 text-xs"
+                        onClick={() => handleReorderProduct(product.name)}
+                      >
+                        <ShoppingCart className="h-3 w-3 mr-1" />
+                        Reorder
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-7 text-xs"
+                        onClick={() => handleEditProduct(product.name)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -96,17 +153,41 @@ export const StockNotifications = ({ selectedBusiness }: StockNotificationsProps
           <Alert className="border-yellow-200 bg-yellow-50">
             <Clock className="h-4 w-4 text-yellow-600" />
             <AlertDescription>
-              <div className="font-medium text-yellow-800 mb-2">Expiring Soon ({expiringSoonProducts.length})</div>
-              <div className="space-y-1">
+              <div className="font-medium text-yellow-800 mb-3">Expiring Soon ({expiringSoonProducts.length})</div>
+              <div className="space-y-2">
                 {expiringSoonProducts.map(product => (
-                  <div key={product.id} className="text-sm text-yellow-700">
-                    • {product.name} - Expires {product.expiryDate}
+                  <div key={product.id} className="flex items-center justify-between bg-white p-2 rounded border">
+                    <div className="text-sm text-yellow-700">
+                      <div className="font-medium">{product.name}</div>
+                      <div className="text-xs opacity-75">Expires {product.expiryDate}</div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-7 text-xs"
+                        onClick={() => handleEditProduct(product.name)}
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Update
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
             </AlertDescription>
           </Alert>
         )}
+
+        {/* Quick Actions Summary */}
+        <div className="pt-2 border-t border-slate-200">
+          <div className="flex justify-between items-center text-xs text-slate-600">
+            <span>Need immediate attention: {criticalAlerts} items</span>
+            <Button size="sm" variant="outline" className="h-7 text-xs">
+              View All Products
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
