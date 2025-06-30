@@ -397,59 +397,77 @@ export type Database = {
         Row: {
           business_id: string
           category: string | null
+          conversion_factor: number | null
           cost: number
           created_at: string
           current_stock: number | null
           description: string | null
           expiry_date: string | null
           id: string
+          is_bulk_item: boolean | null
           markup_percentage: number | null
           max_stock: number | null
           min_stock_level: number | null
           name: string
+          parent_product_id: string | null
           price: number
+          sku: string | null
           supplier_id: string | null
           supplier_name: string | null
           unit: string | null
           updated_at: string
+          variant_type: string | null
+          variant_value: string | null
         }
         Insert: {
           business_id: string
           category?: string | null
+          conversion_factor?: number | null
           cost: number
           created_at?: string
           current_stock?: number | null
           description?: string | null
           expiry_date?: string | null
           id?: string
+          is_bulk_item?: boolean | null
           markup_percentage?: number | null
           max_stock?: number | null
           min_stock_level?: number | null
           name: string
+          parent_product_id?: string | null
           price: number
+          sku?: string | null
           supplier_id?: string | null
           supplier_name?: string | null
           unit?: string | null
           updated_at?: string
+          variant_type?: string | null
+          variant_value?: string | null
         }
         Update: {
           business_id?: string
           category?: string | null
+          conversion_factor?: number | null
           cost?: number
           created_at?: string
           current_stock?: number | null
           description?: string | null
           expiry_date?: string | null
           id?: string
+          is_bulk_item?: boolean | null
           markup_percentage?: number | null
           max_stock?: number | null
           min_stock_level?: number | null
           name?: string
+          parent_product_id?: string | null
           price?: number
+          sku?: string | null
           supplier_id?: string | null
           supplier_name?: string | null
           unit?: string | null
           updated_at?: string
+          variant_type?: string | null
+          variant_value?: string | null
         }
         Relationships: [
           {
@@ -457,6 +475,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_parent_product_id_fkey"
+            columns: ["parent_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
           {

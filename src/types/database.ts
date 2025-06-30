@@ -31,9 +31,24 @@ export interface SupplierPaymentDetails {
   [key: string]: any; // Make it compatible with Json type
 }
 
-// Extended Product type with supplier information
+// Extended Product type with supplier information and variants
 export interface ProductWithSupplier extends Product {
   supplier?: Supplier;
+  variants?: ProductWithSupplier[];
+  parent_product?: ProductWithSupplier;
+}
+
+// Product variant types
+export type ProductType = 'standalone' | 'parent' | 'variant' | 'bulk';
+
+export interface ProductVariantData {
+  type: ProductType;
+  variant_type?: string;
+  variant_value?: string;
+  sku?: string;
+  is_bulk_item?: boolean;
+  conversion_factor?: number;
+  parent_product_id?: string;
 }
 
 // New database types
