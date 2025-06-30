@@ -40,7 +40,10 @@ export const useBusinesses = () => {
         .eq('owner_id', user.id)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching businesses:', error);
+        throw error;
+      }
       return data || [];
     },
   });
@@ -91,7 +94,10 @@ export const useTransactions = (businessId?: string) => {
       
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        throw error;
+      }
       return data || [];
     },
   });
@@ -142,7 +148,10 @@ export const useProducts = (businessId?: string) => {
       
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching products:', error);
+        throw error;
+      }
       return data || [];
     },
   });
@@ -193,7 +202,10 @@ export const useSuppliers = (businessId?: string) => {
       
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching suppliers:', error);
+        throw error;
+      }
       return data || [];
     },
   });
@@ -244,7 +256,10 @@ export const useEmployees = (businessId?: string) => {
       
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching employees:', error);
+        throw error;
+      }
       return data || [];
     },
   });
@@ -311,7 +326,10 @@ export const useDashboardData = (selectedBusiness: BusinessWithAll) => {
       
       const { data: transactions, error: transactionError } = await transactionQuery;
       
-      if (transactionError) throw transactionError;
+      if (transactionError) {
+        console.error('Error fetching transactions:', transactionError);
+        throw transactionError;
+      }
       
       const currentRevenue = transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
       const previousRevenue = currentRevenue * 0.85;
@@ -321,7 +339,10 @@ export const useDashboardData = (selectedBusiness: BusinessWithAll) => {
         .select('*')
         .eq('owner_id', user.id);
       
-      if (businessError) throw businessError;
+      if (businessError) {
+        console.error('Error fetching businesses:', businessError);
+        throw businessError;
+      }
       
       const businessData = await Promise.all(
         (businesses || []).map(async (business) => {
@@ -377,7 +398,10 @@ export const useCreateBusiness = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating business:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {

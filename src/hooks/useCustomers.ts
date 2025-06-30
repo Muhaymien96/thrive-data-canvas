@@ -75,7 +75,10 @@ export const useCreateCustomer = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating customer:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: (data) => {
@@ -108,7 +111,10 @@ export const useUpdateCustomer = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating customer:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: (data) => {
@@ -139,7 +145,10 @@ export const useDeleteCustomer = () => {
         .delete()
         .eq('id', id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting customer:', error);
+        throw error;
+      }
       return id;
     },
     onSuccess: () => {

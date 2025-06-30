@@ -23,35 +23,15 @@ import type { BusinessWithAll } from '@/types/database';
 export type ViewType = 'dashboard' | 'transactions' | 'suppliers' | 'customers' | 'products' | 'events' | 'compliance' | 'employees' | 'business';
 
 export const AdminDashboard = () => {
+  // Move ALL hooks to the top before any conditional logic
   const [selectedBusiness, setSelectedBusiness] = useState<BusinessWithAll>('All');
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showBusinessOnboarding, setShowBusinessOnboarding] = useState(false);
   const { user, logout } = useAuth();
-  const { data: businesses = [], isLoading, refetch } = useBusinesses();
+  const { data: businesses = [], isLoading, error, refetch } = useBusinesses();
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-slate-600">Loading your businesses...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (showBusinessOnboarding) {
-    return (
-      <BusinessOnboarding 
-        onBusinessCreated={() => {
-          setShowBusinessOnboarding(false);
-          refetch();
-        }}
-      />
-    );
-  }
-
+  // Handle business selection effect after hooks
   React.useEffect(() => {
     if (businesses.length === 1 && selectedBusiness === 'All') {
       setSelectedBusiness(businesses[0]);
@@ -87,6 +67,49 @@ export const AdminDashboard = () => {
     }
   };
 
+  // Handle loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Loading your businesses...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <Building2 size={48} className="mx-auto mb-2" />
+            <h2 className="text-xl font-semibold">Error Loading Businesses</h2>
+            <p className="text-sm mt-2">There was an error loading your business data.</p>
+          </div>
+          <Button onClick={() => refetch()} variant="outline">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle business onboarding flow
+  if (showBusinessOnboarding) {
+    return (
+      <BusinessOnboarding 
+        onBusinessCreated={() => {
+          setShowBusinessOnboarding(false);
+          refetch();
+        }}
+      />
+    );
+  }
+
+  // Handle no businesses state
   if (businesses.length === 0) {
     return (
       <div className="min-h-screen bg-slate-50 flex w-full">
@@ -139,6 +162,7 @@ export const AdminDashboard = () => {
     );
   }
 
+  // Main dashboard render
   return (
     <div className="min-h-screen bg-slate-50 flex w-full">
       <Sidebar 
