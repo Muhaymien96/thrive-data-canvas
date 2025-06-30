@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Edit, Trash2, Star, Mail, Phone, MapPin } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Star, Mail, Phone, MapPin, CreditCard, Calendar } from 'lucide-react';
 import { SupplierForm } from './SupplierForm';
+import { SupplierPaymentDialog } from './SupplierPaymentDialog';
 import { useSuppliers, useDeleteSupplier } from '@/hooks/useSuppliers';
 import type { BusinessWithAll, Supplier } from '@/types/database';
 
@@ -17,6 +18,7 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const [paymentSupplier, setPaymentSupplier] = useState<Supplier | null>(null);
 
   const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness.id;
   const { data: suppliers = [], isLoading, error } = useSuppliers(businessId);
@@ -30,6 +32,7 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
 
   const totalSuppliers = filteredSuppliers.length;
   const totalSpent = filteredSuppliers.reduce((sum, supplier) => sum + (supplier.total_spent || 0), 0);
+  const totalOutstanding = filteredSuppliers.reduce((sum, supplier) => sum + (supplier.outstanding_balance || 0), 0);
   const averageRating = filteredSuppliers.length > 0 
     ? filteredSuppliers.reduce((sum, supplier) => sum + (supplier.rating || 0), 0) / filteredSuppliers.length 
     : 0;
@@ -83,7 +86,7 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Suppliers</CardTitle>
@@ -106,6 +109,19 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
             <div className="text-2xl font-bold">R{totalSpent.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               Across all suppliers
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Outstanding Balance</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">R{totalOutstanding.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              Amount owed to suppliers
             </p>
           </CardContent>
         </Card>
@@ -165,6 +181,11 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
                         {supplier.category}
                       </Badge>
                     )}
+                    {supplier.outstanding_balance && supplier.outstanding_balance > 0 && (
+                      <Badge variant="destructive" className="w-fit">
+                        Outstanding: R{supplier.outstanding_balance.toFixed(2)}
+                      </Badge>
+                    )}
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="space-y-2">
@@ -195,10 +216,19 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
                         </span>
                       </div>
                       
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center mb-3">
                         <span className="text-xs text-slate-500">
                           {supplier.last_order ? `Last order: ${new Date(supplier.last_order).toLocaleDateString()}` : 'No orders yet'}
                         </span>
+                        {supplier.last_payment_date && (
+                          <span className="text-xs text-slate-500 flex items-center space-x-1">
+                            <Calendar size={12} />
+                            <span>Paid: {new Date(supplier.last_payment_date).toLocaleDateString()}</span>
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="flex justify-between items-center space-x-2">
                         <div className="flex space-x-2">
                           <Button
                             size="sm"
@@ -219,6 +249,14 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
                             <Trash2 size={14} />
                           </Button>
                         </div>
+                        <Button
+                          size="sm"
+                          onClick={() => setPaymentSupplier(supplier)}
+                          className="flex items-center space-x-1"
+                        >
+                          <CreditCard size={14} />
+                          <span>Pay</span>
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -237,6 +275,14 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
             setShowAddForm(false);
             setSelectedSupplier(null);
           }}
+        />
+      )}
+
+      {paymentSupplier && (
+        <SupplierPaymentDialog
+          supplier={paymentSupplier}
+          isOpen={!!paymentSupplier}
+          onClose={() => setPaymentSupplier(null)}
         />
       )}
     </div>

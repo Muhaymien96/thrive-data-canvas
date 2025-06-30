@@ -548,7 +548,10 @@ export type Database = {
           email: string | null
           id: string
           last_order: string | null
+          last_payment_date: string | null
           name: string
+          outstanding_balance: number | null
+          payment_details: Json | null
           phone: string | null
           rating: number | null
           total_spent: number | null
@@ -562,7 +565,10 @@ export type Database = {
           email?: string | null
           id?: string
           last_order?: string | null
+          last_payment_date?: string | null
           name: string
+          outstanding_balance?: number | null
+          payment_details?: Json | null
           phone?: string | null
           rating?: number | null
           total_spent?: number | null
@@ -576,7 +582,10 @@ export type Database = {
           email?: string | null
           id?: string
           last_order?: string | null
+          last_payment_date?: string | null
           name?: string
+          outstanding_balance?: number | null
+          payment_details?: Json | null
           phone?: string | null
           rating?: number | null
           total_spent?: number | null
