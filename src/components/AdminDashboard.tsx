@@ -10,6 +10,9 @@ import { CustomersView } from '@/components/crm/CustomersView';
 import { ProductsView } from '@/components/products/ProductsView';
 import { EventsView } from '@/components/events/EventsView';
 import { ComplianceView } from '@/components/compliance/ComplianceView';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { LogOut, User } from 'lucide-react';
 
 export type Business = 'Fish' | 'Honey' | 'Mushrooms' | 'All';
 export type ViewType = 'dashboard' | 'transactions' | 'suppliers' | 'customers' | 'products' | 'events' | 'compliance';
@@ -18,6 +21,7 @@ export const AdminDashboard = () => {
   const [selectedBusiness, setSelectedBusiness] = useState<Business>('Fish');
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { user, logout } = useAuth();
 
   const renderCurrentView = () => {
     switch (currentView) {
@@ -51,11 +55,23 @@ export const AdminDashboard = () => {
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
       <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-        <Header 
-          selectedBusiness={selectedBusiness}
-          onBusinessChange={setSelectedBusiness}
-          currentView={currentView}
-        />
+        <div className="flex items-center justify-between bg-white border-b border-slate-200 px-6 py-4">
+          <Header 
+            selectedBusiness={selectedBusiness}
+            onBusinessChange={setSelectedBusiness}
+            currentView={currentView}
+          />
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 text-sm text-slate-600">
+              <User size={16} />
+              <span>{user?.name} ({user?.role})</span>
+            </div>
+            <Button variant="outline" size="sm" onClick={logout} className="flex items-center space-x-2">
+              <LogOut size={16} />
+              <span>Logout</span>
+            </Button>
+          </div>
+        </div>
         <main className="flex-1 p-6">
           {renderCurrentView()}
         </main>
