@@ -13,10 +13,44 @@ interface BusinessManagementViewProps {
   selectedBusiness: BusinessWithAll;
 }
 
+// Create a BusinessEntity interface that matches what the BusinessForm expects
+interface BusinessEntity {
+  id: string;
+  name: string;
+  description: string;
+  industry: string;
+  address: string;
+  phone: string;
+  email: string;
+  website?: string;
+  registrationNumber?: string;
+  taxNumber?: string;
+  vatNumber?: string;
+  status: 'active' | 'inactive';
+  createdAt: string;
+}
+
+// Function to convert Business to BusinessEntity
+const convertToBusinessEntity = (business: Business): BusinessEntity => ({
+  id: business.id,
+  name: business.name,
+  description: business.description || '',
+  industry: business.type, // Map type to industry
+  address: '', // These fields don't exist in the database yet
+  phone: '',
+  email: '',
+  website: '',
+  registrationNumber: '',
+  taxNumber: '',
+  vatNumber: '',
+  status: 'active' as const,
+  createdAt: business.created_at
+});
+
 export const BusinessManagementView = ({ selectedBusiness }: BusinessManagementViewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [selectedBusinessEntity, setSelectedBusinessEntity] = useState<Business | null>(null);
+  const [selectedBusinessEntity, setSelectedBusinessEntity] = useState<BusinessEntity | null>(null);
 
   const { data: businesses = [], isLoading, error } = useBusinesses();
 
@@ -145,7 +179,7 @@ export const BusinessManagementView = ({ selectedBusiness }: BusinessManagementV
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            setSelectedBusinessEntity(business);
+                            setSelectedBusinessEntity(convertToBusinessEntity(business));
                             setShowAddForm(true);
                           }}
                         >

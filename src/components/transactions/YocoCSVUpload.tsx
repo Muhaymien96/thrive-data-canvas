@@ -1,326 +1,270 @@
 
 import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Upload, AlertCircle, CheckCircle, CreditCard } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import type { YocoTransaction } from '@/types/transaction';
-import type { Business } from '@/types/transaction';
+import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import type { Transaction } from '@/types/database';
+
+interface YocoTransaction {
+  id: string;
+  amount: number;
+  fee: number;
+  net_amount: number;
+  currency: string;
+  status: string;
+  type: string;
+  description: string;
+  created_at: string;
+  reference: string;
+  card_type?: string;
+}
 
 interface YocoCSVUploadProps {
-  onClose: () => void;
+  onTransactionsImported: (transactions: Transaction[]) => void;
+  businessId: string;
 }
 
-interface ProcessedYocoTransaction {
-  transactionId: string;
-  date: string;
-  amount: number;
-  processingFee: number;
-  netAmount: number;
-  cardType: string;
-  settlementDate: string;
-  reference: string;
-}
-
-export const YocoCSVUpload = ({ onClose }: YocoCSVUploadProps) => {
+export const YocoCSVUpload = ({ onTransactionsImported, businessId }: YocoCSVUploadProps) => {
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<ProcessedYocoTransaction[]>([]);
-  const [defaultBusiness, setDefaultBusiness] = useState<Business>('Fish');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [previewData, setPreviewData] = useState<YocoTransaction[]>([]);
+  const [step, setStep] = useState<'upload' | 'preview' | 'complete'>('upload');
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const uploadedFile = event.target.files?.[0];
-    if (!uploadedFile) return;
-
-    if (!uploadedFile.name.endsWith('.csv')) {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (selectedFile && selectedFile.type === 'text/csv') {
+      setFile(selectedFile);
+    } else {
       toast({
-        title: "Invalid File Type",
-        description: "Please upload a CSV file from your Yoco dashboard",
+        title: "Invalid file type",
+        description: "Please select a CSV file.",
         variant: "destructive",
       });
-      return;
     }
+  };
 
-    setFile(uploadedFile);
-    const reader = new FileReader();
+  const parseCSV = (csvText: string): YocoTransaction[] => {
+    const lines = csvText.split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
     
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      const lines = text.split('\n').filter(line => line.trim());
-      
-      if (lines.length === 0) {
-        toast({
-          title: "Empty File",
-          description: "The CSV file appears to be empty",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-      
-      // Validate Yoco CSV format
-      const expectedHeaders = ['Transaction Date', 'Transaction ID', 'Amount', 'Processing Fee', 'Net Amount'];
-      const hasRequiredHeaders = expectedHeaders.every(header => 
-        headers.some(h => h.includes(header.replace(' ', '')))
-      );
-      
-      if (!hasRequiredHeaders) {
-        toast({
-          title: "Invalid Yoco CSV Format",
-          description: "This doesn't appear to be a Yoco export file. Please download the CSV from your Yoco dashboard.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const data = lines.slice(1).map(line => {
+    return lines.slice(1)
+      .filter(line => line.trim())
+      .map((line, index) => {
         const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-        const row: any = {};
+        const transaction: any = {};
+        
         headers.forEach((header, i) => {
-          row[header] = values[i] || '';
+          transaction[header] = values[i] || '';
         });
-        return row as YocoTransaction;
-      }).filter(row => row['Transaction ID']);
 
-      const processed = processYocoData(data);
-      setPreview(processed);
-      validateYocoData(processed);
-    };
-    
-    reader.readAsText(uploadedFile);
-  };
-
-  const processYocoData = (data: YocoTransaction[]): ProcessedYocoTransaction[] => {
-    return data.map(row => ({
-      transactionId: row['Transaction ID'],
-      date: row['Transaction Date'],
-      amount: parseFloat(row['Amount'].replace(/[R,]/g, '')) || 0,
-      processingFee: parseFloat(row['Processing Fee'].replace(/[R,]/g, '')) || 0,
-      netAmount: parseFloat(row['Net Amount'].replace(/[R,]/g, '')) || 0,
-      cardType: row['Card Type'] || 'Unknown',
-      settlementDate: row['Settlement Date'] || '',
-      reference: row['Reference'] || ''
-    }));
-  };
-
-  const validateYocoData = (data: ProcessedYocoTransaction[]) => {
-    const errors: string[] = [];
-    
-    data.forEach((row, index) => {
-      if (!row.transactionId) {
-        errors.push(`Row ${index + 2}: Missing transaction ID`);
-      }
-      if (row.amount <= 0) {
-        errors.push(`Row ${index + 2}: Invalid amount`);
-      }
-      if (!row.date) {
-        errors.push(`Row ${index + 2}: Missing transaction date`);
-      }
-    });
-
-    setValidationErrors(errors);
-  };
-
-  const handleImport = async () => {
-    if (validationErrors.length > 0) {
-      toast({
-        title: "Validation Errors",
-        description: "Please fix all validation errors before importing",
-        variant: "destructive",
+        return {
+          id: transaction.id || `yoco-${index}`,
+          amount: parseFloat(transaction.amount) || 0,
+          fee: parseFloat(transaction.fee) || 0,
+          net_amount: parseFloat(transaction.net_amount) || 0,
+          currency: transaction.currency || 'ZAR',
+          status: transaction.status || 'completed',
+          type: transaction.type || 'payment',
+          description: transaction.description || 'Yoco Payment',
+          created_at: transaction.created_at || new Date().toISOString(),
+          reference: transaction.reference || '',
+          card_type: transaction.card_type
+        };
       });
-      return;
-    }
+  };
+
+  const convertToTransactions = (yocoTransactions: YocoTransaction[]): Transaction[] => {
+    return yocoTransactions.map(yoco => ({
+      id: `yoco-${yoco.id}`,
+      business_id: businessId,
+      type: 'sale',
+      amount: yoco.amount,
+      date: yoco.created_at.split('T')[0],
+      description: yoco.description,
+      payment_method: 'card',
+      payment_status: yoco.status === 'successful' ? 'completed' : 'pending',
+      yoco_transaction_id: yoco.id,
+      yoco_fee: yoco.fee,
+      yoco_net_amount: yoco.net_amount,
+      yoco_reference: yoco.reference,
+      yoco_card_type: yoco.card_type,
+      customer_name: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    } as Transaction));
+  };
+
+  const handleProcessFile = async () => {
+    if (!file) return;
 
     setIsProcessing(true);
-    
-    // Simulate processing Yoco transactions
-    setTimeout(() => {
-      const totalAmount = preview.reduce((sum, t) => sum + t.amount, 0);
-      const totalFees = preview.reduce((sum, t) => sum + t.processingFee, 0);
-      const netRevenue = preview.reduce((sum, t) => sum + t.netAmount, 0);
+    try {
+      const text = await file.text();
+      const yocoData = parseCSV(text);
+      setPreviewData(yocoData);
+      setStep('preview');
       
       toast({
-        title: "Yoco Import Successful",
-        description: `Imported ${preview.length} transactions. Gross: R${totalAmount.toFixed(2)}, Fees: R${totalFees.toFixed(2)}, Net: R${netRevenue.toFixed(2)}`,
+        title: "File processed successfully",
+        description: `Found ${yocoData.length} transactions to import.`,
       });
+    } catch (error) {
+      console.error('Error processing CSV:', error);
+      toast({
+        title: "Error processing file",
+        description: "Please check your CSV format and try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsProcessing(false);
-      onClose();
-    }, 2000);
+    }
+  };
+
+  const handleImport = () => {
+    const transactions = convertToTransactions(previewData);
+    onTransactionsImported(transactions);
+    setStep('complete');
+    
+    toast({
+      title: "Transactions imported successfully",
+      description: `${transactions.length} transactions have been imported.`,
+    });
+  };
+
+  const resetUpload = () => {
+    setFile(null);
+    setPreviewData([]);
+    setStep('upload');
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
         <div className="flex items-center space-x-2">
-          <CreditCard className="text-blue-600" size={24} />
-          <h3 className="text-lg font-semibold text-slate-900">Import Yoco Transactions</h3>
+          <Upload className="h-5 w-5" />
+          <CardTitle>Import Yoco Transactions</CardTitle>
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          aria-label="Close upload dialog"
-        >
-          <X size={20} />
-        </Button>
-      </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {step === 'upload' && (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="csv-file">Select Yoco CSV File</Label>
+              <Input
+                id="csv-file"
+                type="file"
+                accept=".csv"
+                onChange={handleFileChange}
+                className="mt-2"
+              />
+              <p className="text-sm text-slate-500 mt-1">
+                Upload your Yoco transaction export CSV file
+              </p>
+            </div>
 
-      {/* Instructions */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="pt-4">
-          <div className="text-sm text-blue-800">
-            <p className="font-medium mb-2">How to get your Yoco data:</p>
-            <ol className="list-decimal list-inside space-y-1">
-              <li>Log into your Yoco dashboard</li>
-              <li>Go to Reports → Transactions</li>
-              <li>Select your date range</li>
-              <li>Click "Export to CSV"</li>
-              <li>Upload the downloaded file here</li>
-            </ol>
-          </div>
-        </CardContent>
-      </Card>
+            {file && (
+              <div className="flex items-center space-x-2 p-3 bg-slate-50 rounded-lg">
+                <FileText className="h-4 w-4 text-slate-600" />
+                <span className="text-sm">{file.name}</span>
+                <span className="text-xs text-slate-500">({(file.size / 1024).toFixed(1)} KB)</span>
+              </div>
+            )}
 
-      {/* Default Business Selection */}
-      <div className="space-y-2">
-        <Label>Assign all transactions to business:</Label>
-        <Select value={defaultBusiness} onValueChange={(value) => setDefaultBusiness(value as Business)}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Fish">Fish</SelectItem>
-            <SelectItem value="Honey">Honey</SelectItem>
-            <SelectItem value="Mushrooms">Mushrooms</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* File Upload */}
-      <div className="space-y-2">
-        <Label htmlFor="yoco-csv">Upload Yoco CSV Export</Label>
-        <div className="flex items-center space-x-2">
-          <Input
-            id="yoco-csv"
-            type="file"
-            accept=".csv"
-            onChange={handleFileUpload}
-            className="flex-1"
-          />
-          <Upload size={20} className="text-slate-400" />
-        </div>
-      </div>
-
-      {/* Validation Summary */}
-      {file && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              {validationErrors.length === 0 ? (
-                <CheckCircle className="text-green-600" size={20} />
+            <Button 
+              onClick={handleProcessFile} 
+              disabled={!file || isProcessing}
+              className="w-full"
+            >
+              {isProcessing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Processing...
+                </>
               ) : (
-                <AlertCircle className="text-red-600" size={20} />
+                'Process File'
               )}
-              <span>
-                Validation {validationErrors.length === 0 ? 'Passed' : 'Failed'}
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div>
-                <span className="font-medium">Transactions:</span> {preview.length}
-              </div>
-              <div>
-                <span className="font-medium">Total Amount:</span> R{preview.reduce((sum, t) => sum + t.amount, 0).toFixed(2)}
-              </div>
-              <div>
-                <span className="font-medium">Processing Fees:</span> R{preview.reduce((sum, t) => sum + t.processingFee, 0).toFixed(2)}
+            </Button>
+          </div>
+        )}
+
+        {step === 'preview' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Preview Transactions</h3>
+              <div className="text-sm text-slate-600">
+                {previewData.length} transactions found
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Validation Errors */}
-      {validationErrors.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-red-600">Validation Errors</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="max-h-40 overflow-y-auto space-y-1">
-              {validationErrors.map((error, index) => (
-                <div key={index} className="text-sm text-red-600">
-                  {error}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Data Preview */}
-      {preview.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Yoco Transaction Preview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto max-h-60">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2 px-2">Date</th>
-                    <th className="text-left py-2 px-2">Transaction ID</th>
-                    <th className="text-left py-2 px-2">Amount</th>
-                    <th className="text-left py-2 px-2">Fee</th>
-                    <th className="text-left py-2 px-2">Net</th>
-                    <th className="text-left py-2 px-2">Card Type</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {preview.slice(0, 5).map((row, index) => (
-                    <tr key={index} className="border-b">
-                      <td className="py-1 px-2">{row.date}</td>
-                      <td className="py-1 px-2 font-mono text-xs">{row.transactionId}</td>
-                      <td className="py-1 px-2">R{row.amount.toFixed(2)}</td>
-                      <td className="py-1 px-2 text-red-600">R{row.processingFee.toFixed(2)}</td>
-                      <td className="py-1 px-2 font-medium">R{row.netAmount.toFixed(2)}</td>
-                      <td className="py-1 px-2">{row.cardType}</td>
+            <div className="border rounded-lg overflow-hidden">
+              <div className="max-h-96 overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 border-b">
+                    <tr>
+                      <th className="text-left p-3">Date</th>
+                      <th className="text-left p-3">Amount</th>
+                      <th className="text-left p-3">Fee</th>
+                      <th className="text-left p-3">Net</th>
+                      <th className="text-left p-3">Status</th>
+                      <th className="text-left p-3">Description</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              {preview.length > 5 && (
-                <p className="text-xs text-slate-600 mt-2">
-                  Showing first 5 of {preview.length} transactions
-                </p>
+                  </thead>
+                  <tbody>
+                    {previewData.slice(0, 10).map((transaction, index) => (
+                      <tr key={index} className="border-b">
+                        <td className="p-3">{new Date(transaction.created_at).toLocaleDateString()}</td>
+                        <td className="p-3">R{transaction.amount.toFixed(2)}</td>
+                        <td className="p-3">R{transaction.fee.toFixed(2)}</td>
+                        <td className="p-3">R{transaction.net_amount.toFixed(2)}</td>
+                        <td className="p-3">
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            transaction.status === 'successful' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {transaction.status}
+                          </span>
+                        </td>
+                        <td className="p-3 truncate max-w-48">{transaction.description}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {previewData.length > 10 && (
+                <div className="p-3 bg-slate-50 text-center text-sm text-slate-600">
+                  ... and {previewData.length - 10} more transactions
+                </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Action Buttons */}
-      <div className="flex space-x-2 pt-4">
-        <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-          Cancel
-        </Button>
-        <Button
-          onClick={handleImport}
-          disabled={!file || validationErrors.length > 0 || isProcessing}
-          className="flex-1"
-        >
-          {isProcessing ? 'Importing...' : `Import ${preview.length} Transactions`}
-        </Button>
-      </div>
-    </div>
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={resetUpload}>
+                Cancel
+              </Button>
+              <Button onClick={handleImport}>
+                Import {previewData.length} Transactions
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === 'complete' && (
+          <div className="text-center space-y-4">
+            <CheckCircle className="h-12 w-12 text-green-600 mx-auto" />
+            <h3 className="text-lg font-medium">Import Complete!</h3>
+            <p className="text-slate-600">
+              Your Yoco transactions have been successfully imported.
+            </p>
+            <Button onClick={resetUpload}>
+              Import Another File
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };

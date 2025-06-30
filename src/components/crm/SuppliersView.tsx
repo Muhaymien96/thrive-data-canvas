@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Plus, Search, Edit, Trash2, Star, Mail, Phone, MapPin } from 'lucide-react';
 import { SupplierForm } from './SupplierForm';
 import { useSuppliers } from '@/hooks/useSupabaseData';
-import { Search, Plus, Users, Star, Phone, Mail } from 'lucide-react';
-import type { BusinessWithAll } from '@/types/database';
+import type { BusinessWithAll, Supplier } from '@/types/database';
 
 interface SuppliersViewProps {
   selectedBusiness: BusinessWithAll;
@@ -15,22 +15,34 @@ interface SuppliersViewProps {
 
 export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [showForm, setShowForm] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
 
   const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness.id;
   const { data: suppliers = [], isLoading, error } = useSuppliers(businessId);
 
   const filteredSuppliers = suppliers.filter(supplier =>
     supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (supplier.category && supplier.category.toLowerCase().includes(searchTerm.toLowerCase()))
+    supplier.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supplier.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalSuppliers = filteredSuppliers.length;
+  const totalSpent = filteredSuppliers.reduce((sum, supplier) => sum + (supplier.total_spent || 0), 0);
+  const averageRating = filteredSuppliers.length > 0 
+    ? filteredSuppliers.reduce((sum, supplier) => sum + (supplier.rating || 0), 0) / filteredSuppliers.length 
+    : 0;
+
+  const handleSaveSupplier = (supplier: Supplier) => {
+    // Handle save logic here
+    setShowAddForm(false);
+    setSelectedSupplier(null);
+  };
 
   if (error) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-slate-900">Suppliers</h2>
-        </div>
+        <h2 className="text-2xl font-bold text-slate-900">Suppliers</h2>
         <Card>
           <CardContent className="pt-6">
             <div className="text-center text-red-600">
@@ -45,40 +57,70 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-slate-900">Suppliers</h2>
-        <Button 
-          onClick={() => setShowForm(true)}
-          className="flex items-center space-x-2"
-        >
-          <Plus size={16} />
-          <span>Add Supplier</span>
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Suppliers</h2>
+          <p className="text-slate-600">Manage your supplier relationships and track spending</p>
+        </div>
+        <Button onClick={() => setShowAddForm(true)}>
+          <Plus size={16} className="mr-2" />
+          Add Supplier
         </Button>
       </div>
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <SupplierForm onClose={() => setShowForm(false)} selectedBusiness={selectedBusiness} />
-          </div>
-        </div>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Suppliers</CardTitle>
+            <Plus className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalSuppliers}</div>
+            <p className="text-xs text-muted-foreground">
+              Active supplier relationships
+            </p>
+          </CardContent>
+        </Card>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-        <Input
-          placeholder="Search suppliers by name or category..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+            <Plus className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">R{totalSpent.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              Across all suppliers
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
+            <Star className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{averageRating.toFixed(1)}</div>
+            <p className="text-xs text-muted-foreground">
+              Out of 5 stars
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Users size={20} />
-            <span>Supplier Directory</span>
-          </CardTitle>
+          <div className="flex items-center space-x-4">
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-3 top-3 text-slate-400" />
+              <Input
+                placeholder="Search suppliers by name, email, or category..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -86,78 +128,96 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               <span className="ml-3 text-slate-600">Loading suppliers...</span>
             </div>
-          ) : filteredSuppliers.length > 0 ? (
+          ) : filteredSuppliers.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-slate-500">No suppliers found. Add your first supplier to get started.</p>
+            </div>
+          ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredSuppliers.map((supplier) => (
-                <Card key={supplier.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="font-semibold text-slate-900">{supplier.name}</h3>
-                      {supplier.rating && (
-                        <div className="flex items-center space-x-1">
-                          <Star size={14} className="text-yellow-500 fill-current" />
-                          <span className="text-sm text-slate-600">{supplier.rating}</span>
-                        </div>
-                      )}
+                <Card key={supplier.id} className="border border-slate-200 hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{supplier.name}</CardTitle>
+                      <div className="flex items-center space-x-1">
+                        <Star size={16} className="text-yellow-400 fill-current" />
+                        <span className="text-sm text-slate-600">{supplier.rating || 0}</span>
+                      </div>
                     </div>
-                    
                     {supplier.category && (
-                      <Badge variant="secondary" className="mb-2">
+                      <Badge variant="secondary" className="w-fit">
                         {supplier.category}
                       </Badge>
                     )}
-                    
-                    <div className="space-y-2 text-sm text-slate-600">
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-2">
                       {supplier.email && (
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 text-sm text-slate-600">
                           <Mail size={14} />
                           <span>{supplier.email}</span>
                         </div>
                       )}
                       {supplier.phone && (
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 text-sm text-slate-600">
                           <Phone size={14} />
                           <span>{supplier.phone}</span>
                         </div>
                       )}
-                    </div>
-                    
-                    <div className="mt-3 pt-3 border-t border-slate-100">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-500">Total Spent:</span>
-                        <span className="font-medium">R{(supplier.total_spent || 0).toLocaleString()}</span>
-                      </div>
-                      {supplier.last_order && (
-                        <div className="flex justify-between text-sm mt-1">
-                          <span className="text-slate-500">Last Order:</span>
-                          <span>{supplier.last_order}</span>
+                      {supplier.address && (
+                        <div className="flex items-center space-x-2 text-sm text-slate-600">
+                          <MapPin size={14} />
+                          <span className="truncate">{supplier.address}</span>
                         </div>
                       )}
+                    </div>
+                    
+                    <div className="pt-3 border-t border-slate-100">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-sm font-medium text-slate-900">
+                          Total Spent: R{(supplier.total_spent || 0).toFixed(2)}
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-slate-500">
+                          {supplier.last_order ? `Last order: ${new Date(supplier.last_order).toLocaleDateString()}` : 'No orders yet'}
+                        </span>
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedSupplier(supplier);
+                              setShowAddForm(true);
+                            }}
+                          >
+                            <Edit size={14} />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-12">
-              <Users size={48} className="mx-auto text-slate-300 mb-4" />
-              <h3 className="text-lg font-medium text-slate-900 mb-2">No suppliers found</h3>
-              <p className="text-slate-500 mb-4">
-                {searchTerm 
-                  ? `No suppliers match "${searchTerm}"`
-                  : 'Start by adding your first supplier to manage your supply chain.'
-                }
-              </p>
-              {!searchTerm && (
-                <Button onClick={() => setShowForm(true)} className="flex items-center space-x-2">
-                  <Plus size={16} />
-                  <span>Add Your First Supplier</span>
-                </Button>
-              )}
-            </div>
           )}
         </CardContent>
       </Card>
+
+      {showAddForm && (
+        <SupplierForm
+          supplier={selectedSupplier}
+          onClose={() => {
+            setShowAddForm(false);
+            setSelectedSupplier(null);
+          }}
+          onSave={handleSaveSupplier}
+        />
+      )}
     </div>
   );
 };
