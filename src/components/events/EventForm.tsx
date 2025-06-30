@@ -10,6 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useCreateEvent } from '@/hooks/useEvents';
+import { useBusinessData } from '@/hooks/useBusinessData';
+import { toast } from '@/hooks/use-toast';
 import type { BusinessWithAll } from '@/types/database';
 
 interface EventFormProps {
@@ -20,31 +23,58 @@ interface EventFormProps {
 
 export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormProps) => {
   const [formData, setFormData] = useState({
-    name: '',
+    title: '',
     location: '',
     date: selectedDate || new Date(),
-    business: defaultBusiness === 'All' ? 'Fish' : (typeof defaultBusiness === 'string' ? defaultBusiness : defaultBusiness.name),
-    marketCost: '',
-    totalRevenue: '',
-    notes: '',
+    business_id: defaultBusiness === 'All' ? '' : (typeof defaultBusiness === 'string' ? defaultBusiness : defaultBusiness.id),
+    description: '',
     startTime: '',
     endTime: '',
+    type: 'meeting' as const,
+    status: 'upcoming' as const
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const createEvent = useCreateEvent();
+  const { data: businesses = [], isLoading: businessesLoading } = useBusinessData();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Event data:', formData);
-    onClose();
+    
+    if (!formData.business_id) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a business for this event.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const eventData = {
+        title: formData.title,
+        description: formData.description,
+        date: format(formData.date, 'yyyy-MM-dd'),
+        time: formData.startTime || '09:00',
+        location: formData.location,
+        type: formData.type,
+        status: formData.status,
+        business_id: formData.business_id
+      };
+
+      await createEvent.mutateAsync(eventData);
+      onClose();
+    } catch (error) {
+      console.error('Error creating event:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create event. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleInputChange = (field: string, value: string | Date) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const calculateProfit = () => {
-    const revenue = parseFloat(formData.totalRevenue) || 0;
-    const cost = parseFloat(formData.marketCost) || 0;
-    return revenue - cost;
   };
 
   return (
@@ -59,25 +89,70 @@ export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormP
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="name">Event Name *</Label>
+            <Label htmlFor="title">Event Title *</Label>
             <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="e.g., Weekend Farmers Market"
+              id="title"
+              value={formData.title}
+              onChange={(e) => handleInputChange('title', e.target.value)}
+              placeholder="e.g., Weekly Team Meeting"
               required
             />
           </div>
 
           <div>
-            <Label htmlFor="location">Location *</Label>
+            <Label htmlFor="location">Location</Label>
             <Input
               id="location"
               value={formData.location}
               onChange={(e) => handleInputChange('location', e.target.value)}
-              placeholder="e.g., Central Park Market"
-              required
+              placeholder="e.g., Conference Room A"
             />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="business">Business *</Label>
+            <Select
+              value={formData.business_id}
+              onValueChange={(value) => handleInputChange('business_id', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a business" />
+              </SelectTrigger>
+              <SelectContent>
+                {businessesLoading ? (
+                  <SelectItem value="loading" disabled>Loading businesses...</SelectItem>
+                ) : businesses.length > 0 ? (
+                  businesses.map((business) => (
+                    <SelectItem key={business.id} value={business.id}>
+                      {business.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="none" disabled>No businesses found</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="type">Event Type</Label>
+            <Select
+              value={formData.type}
+              onValueChange={(value: any) => handleInputChange('type', value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="meeting">Meeting</SelectItem>
+                <SelectItem value="delivery">Delivery</SelectItem>
+                <SelectItem value="inspection">Inspection</SelectItem>
+                <SelectItem value="maintenance">Maintenance</SelectItem>
+                <SelectItem value="market">Market Event</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -129,82 +204,31 @@ export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormP
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="business">Business *</Label>
-            <Select
-              value={formData.business}
-              onValueChange={(value) => handleInputChange('business', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Fish">Fish</SelectItem>
-                <SelectItem value="Honey">Honey</SelectItem>
-                <SelectItem value="Mushrooms">Mushrooms</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="marketCost">Market Cost (R)</Label>
-            <Input
-              id="marketCost"
-              type="number"
-              step="0.01"
-              value={formData.marketCost}
-              onChange={(e) => handleInputChange('marketCost', e.target.value)}
-              placeholder="0.00"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="totalRevenue">Total Revenue (R)</Label>
-            <Input
-              id="totalRevenue"
-              type="number"
-              step="0.01"
-              value={formData.totalRevenue}
-              onChange={(e) => handleInputChange('totalRevenue', e.target.value)}
-              placeholder="0.00"
-            />
-          </div>
-        </div>
-
-        {(formData.marketCost || formData.totalRevenue) && (
-          <div className="bg-slate-50 p-4 rounded-lg">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-600">Expected Profit:</span>
-              <span className={`font-medium ${calculateProfit() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                R{calculateProfit().toFixed(2)}
-              </span>
-            </div>
-            {formData.marketCost && formData.totalRevenue && (
-              <div className="text-xs text-slate-500 mt-1">
-                Profit Margin: {((calculateProfit() / (parseFloat(formData.totalRevenue) || 1)) * 100).toFixed(1)}%
-              </div>
-            )}
-          </div>
-        )}
-
         <div>
-          <Label htmlFor="notes">Notes</Label>
+          <Label htmlFor="description">Description</Label>
           <Textarea
-            id="notes"
-            value={formData.notes}
-            onChange={(e) => handleInputChange('notes', e.target.value)}
-            placeholder="Additional notes about the event..."
+            id="description"
+            value={formData.description}
+            onChange={(e) => handleInputChange('description', e.target.value)}
+            placeholder="Event details and agenda..."
             rows={3}
           />
         </div>
 
         <div className="flex justify-end space-x-4 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onClose}
+            disabled={createEvent.isPending}
+          >
             Cancel
           </Button>
-          <Button type="submit">
-            Add Event
+          <Button 
+            type="submit"
+            disabled={createEvent.isPending}
+          >
+            {createEvent.isPending ? 'Creating...' : 'Add Event'}
           </Button>
         </div>
       </form>

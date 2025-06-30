@@ -7,7 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X } from 'lucide-react';
 import { useCreateEmployee, useUpdateEmployee } from '@/hooks/useEmployees';
-import type { Employee } from '@/types/database';
+import { toast } from '@/hooks/use-toast';
+import type { Employee, EmployeeInsert } from '@/types/database';
+
+interface BankDetails {
+  accountNumber: string;
+  bankName: string;
+  branchCode: string;
+}
 
 interface EmployeeFormProps {
   employee?: Employee | null;
@@ -37,28 +44,89 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
   const createEmployeeMutation = useCreateEmployee();
   const updateEmployeeMutation = useUpdateEmployee();
 
+  const validateForm = (): boolean => {
+    if (!formData.name?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Employee name is required",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!formData.business_id?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Business ID is required",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!formData.position?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Position is required",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       if (employee) {
         // Update existing employee
         const updatedEmployee = await updateEmployeeMutation.mutateAsync({
           id: employee.id,
-          ...formData
+          name: formData.name!,
+          email: formData.email,
+          phone: formData.phone,
+          business_id: formData.business_id!,
+          position: formData.position,
+          hourly_rate: formData.hourly_rate,
+          salary: formData.salary,
+          start_date: formData.start_date,
+          status: formData.status,
+          payment_method: formData.payment_method,
+          bank_details: formData.bank_details
         });
         onSave(updatedEmployee);
       } else {
         // Create new employee
-        const newEmployee = await createEmployeeMutation.mutateAsync({
-          ...formData,
-          business_id: formData.business_id || ''
-        });
+        const employeeData: EmployeeInsert = {
+          name: formData.name!,
+          email: formData.email,
+          phone: formData.phone,
+          business_id: formData.business_id!,
+          position: formData.position,
+          hourly_rate: formData.hourly_rate,
+          salary: formData.salary,
+          start_date: formData.start_date,
+          status: formData.status,
+          payment_method: formData.payment_method,
+          bank_details: formData.bank_details
+        };
+        
+        const newEmployee = await createEmployeeMutation.mutateAsync(employeeData);
         onSave(newEmployee);
       }
       onClose();
     } catch (error) {
       console.error('Error saving employee:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save employee. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -77,10 +145,10 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">Full Name *</Label>
                 <Input
                   id="name"
-                  value={formData.name}
+                  value={formData.name || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   required
                 />
@@ -106,7 +174,7 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
                 />
               </div>
               <div>
-                <Label htmlFor="position">Position</Label>
+                <Label htmlFor="position">Position *</Label>
                 <Input
                   id="position"
                   value={formData.position || ''}
@@ -194,10 +262,13 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
                     <Label htmlFor="accountNumber">Account Number</Label>
                     <Input
                       id="accountNumber"
-                      value={(formData.bank_details as any)?.accountNumber || ''}
+                      value={(formData.bank_details as BankDetails)?.accountNumber || ''}
                       onChange={(e) => setFormData(prev => ({
                         ...prev,
-                        bank_details: { ...(prev.bank_details as any), accountNumber: e.target.value }
+                        bank_details: { 
+                          ...(prev.bank_details as BankDetails || {}), 
+                          accountNumber: e.target.value 
+                        }
                       }))}
                     />
                   </div>
@@ -205,10 +276,13 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
                     <Label htmlFor="bankName">Bank Name</Label>
                     <Input
                       id="bankName"
-                      value={(formData.bank_details as any)?.bankName || ''}
+                      value={(formData.bank_details as BankDetails)?.bankName || ''}
                       onChange={(e) => setFormData(prev => ({
                         ...prev,
-                        bank_details: { ...(prev.bank_details as any), bankName: e.target.value }
+                        bank_details: { 
+                          ...(prev.bank_details as BankDetails || {}), 
+                          bankName: e.target.value 
+                        }
                       }))}
                     />
                   </div>
@@ -216,10 +290,13 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
                     <Label htmlFor="branchCode">Branch Code</Label>
                     <Input
                       id="branchCode"
-                      value={(formData.bank_details as any)?.branchCode || ''}
+                      value={(formData.bank_details as BankDetails)?.branchCode || ''}
                       onChange={(e) => setFormData(prev => ({
                         ...prev,
-                        bank_details: { ...(prev.bank_details as any), branchCode: e.target.value }
+                        bank_details: { 
+                          ...(prev.bank_details as BankDetails || {}), 
+                          branchCode: e.target.value 
+                        }
                       }))}
                     />
                   </div>
