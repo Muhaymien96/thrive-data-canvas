@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -102,7 +101,7 @@ export const EventDetails = ({ event, onClose }: EventDetailsProps) => {
   if (showEditForm) {
     return (
       <EventForm
-        defaultBusiness={event.business_id}
+        defaultBusiness={event.business_id as any}
         onClose={() => setShowEditForm(false)}
         onSave={() => {
           setShowEditForm(false);
