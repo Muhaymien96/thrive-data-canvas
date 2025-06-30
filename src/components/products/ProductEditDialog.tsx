@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from '@/hooks/use-toast';
-import type { Product } from '@/types/database';
+import { useSuppliers } from '@/hooks/useSuppliers';
+import { useUpdateProduct } from '@/hooks/useProducts';
+import type { ProductWithSupplier } from '@/types/database';
 
 interface ProductEditDialogProps {
-  product: Product | null;
+  product: ProductWithSupplier | null;
   open: boolean;
   onClose: () => void;
 }
@@ -23,9 +24,12 @@ export const ProductEditDialog = ({ product, open, onClose }: ProductEditDialogP
     price: 0,
     current_stock: 0,
     min_stock_level: 0,
-    supplier_name: '',
+    supplier_id: '',
     expiry_date: '',
   });
+
+  const { data: suppliers = [] } = useSuppliers(product?.business_id);
+  const updateProduct = useUpdateProduct();
 
   useEffect(() => {
     if (product) {
@@ -37,7 +41,7 @@ export const ProductEditDialog = ({ product, open, onClose }: ProductEditDialogP
         price: product.price,
         current_stock: product.current_stock || 0,
         min_stock_level: product.min_stock_level || 0,
-        supplier_name: product.supplier_name || '',
+        supplier_id: product.supplier_id || '',
         expiry_date: product.expiry_date || '',
       });
     }
@@ -62,30 +66,24 @@ export const ProductEditDialog = ({ product, open, onClose }: ProductEditDialogP
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Product updated:', formData);
-    
-    toast({
-      title: "Product Updated",
-      description: `Successfully updated ${formData.name}`,
-    });
-    onClose();
-  };
+    if (!product) return;
 
-  const getUnitsForCategory = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'seafood':
-      case 'fish':
-        return ['kg', 'piece', 'box'];
-      case 'honey':
-      case 'natural products':
-        return ['L', 'kg', 'jar'];
-      case 'vegetables':
-      case 'mushrooms':
-        return ['kg', 'box', 'punnet'];
-      default:
-        return ['kg', 'L', 'piece', 'box', 'jar', 'punnet'];
+    try {
+      const updateData = {
+        ...formData,
+        supplier_name: suppliers.find(s => s.id === formData.supplier_id)?.name || null,
+        markup_percentage: calculateMarkup(formData.cost, formData.price)
+      };
+
+      await updateProduct.mutateAsync({
+        id: product.id,
+        ...updateData
+      });
+      onClose();
+    } catch (error) {
+      console.error('Error updating product:', error);
     }
   };
 
@@ -95,6 +93,8 @@ export const ProductEditDialog = ({ product, open, onClose }: ProductEditDialogP
     'Fresh Mushrooms', 'Exotic Mushrooms', 'Dried Mushrooms', 'Organic Mushrooms',
     'Vegetables', 'Natural Products', 'Other'
   ];
+
+  const units = ['kg', 'L', 'piece', 'box', 'jar', 'punnet'];
 
   if (!product) return null;
 
@@ -116,6 +116,26 @@ export const ProductEditDialog = ({ product, open, onClose }: ProductEditDialogP
                 placeholder="Enter product name"
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplier">Supplier *</Label>
+              <Select 
+                value={formData.supplier_id}
+                onValueChange={(value) => handleInputChange('supplier_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select supplier" />
+                </SelectTrigger>
+                <SelectContent>
+                  {suppliers.map((supplier) => (
+                    <SelectItem key={supplier.id} value={supplier.id}>
+                      {supplier.name}
+                      {supplier.name === 'Self-Produced' && ' (Own Production)'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -147,23 +167,13 @@ export const ProductEditDialog = ({ product, open, onClose }: ProductEditDialogP
                   <SelectValue placeholder="Select unit" />
                 </SelectTrigger>
                 <SelectContent>
-                  {getUnitsForCategory(formData.category).map((unit) => (
+                  {units.map((unit) => (
                     <SelectItem key={unit} value={unit}>
                       {unit}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="supplier">Supplier</Label>
-              <Input
-                id="supplier"
-                value={formData.supplier_name}
-                onChange={(e) => handleInputChange('supplier_name', e.target.value)}
-                placeholder="Enter supplier name"
-              />
             </div>
 
             <div className="space-y-2">
@@ -272,8 +282,8 @@ export const ProductEditDialog = ({ product, open, onClose }: ProductEditDialogP
             <Button type="button" variant="outline" onClick={onClose} className="flex-1">
               Cancel
             </Button>
-            <Button type="submit" className="flex-1">
-              Update Product
+            <Button type="submit" className="flex-1" disabled={updateProduct.isPending}>
+              {updateProduct.isPending ? 'Updating...' : 'Update Product'}
             </Button>
           </div>
         </form>

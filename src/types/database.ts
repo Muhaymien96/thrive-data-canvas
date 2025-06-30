@@ -31,6 +31,11 @@ export interface SupplierPaymentDetails {
   [key: string]: any; // Make it compatible with Json type
 }
 
+// Extended Product type with supplier information
+export interface ProductWithSupplier extends Product {
+  supplier?: Supplier;
+}
+
 // New database types
 export interface ComplianceItem {
   id: string;

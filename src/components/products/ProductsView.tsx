@@ -7,7 +7,7 @@ import { ProductTable } from './ProductTable';
 import { StockMovements } from './StockMovements';
 import { InvoiceGenerator } from './InvoiceGenerator';
 import { StockNotifications } from './StockNotifications';
-import { useProducts } from '@/hooks/useSupabaseData';
+import { useProducts } from '@/hooks/useProducts';
 import { Plus, Package, TrendingUp, FileText } from 'lucide-react';
 import type { BusinessWithAll } from '@/types/database';
 
@@ -50,6 +50,7 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
         <Button
           onClick={() => setShowForm(true)}
           className="flex items-center space-x-2"
+          disabled={!businessId}
         >
           <Plus size={16} />
           <span>Add Product</span>
@@ -156,7 +157,7 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <ProductForm 
               onClose={() => setShowForm(false)} 
-              defaultBusiness={selectedBusiness === 'All' ? undefined : (typeof selectedBusiness === 'string' ? selectedBusiness : selectedBusiness.id)}
+              defaultBusiness={businessId}
             />
           </div>
         </div>

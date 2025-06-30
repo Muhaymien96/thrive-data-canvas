@@ -408,6 +408,7 @@ export type Database = {
           min_stock_level: number | null
           name: string
           price: number
+          supplier_id: string | null
           supplier_name: string | null
           unit: string | null
           updated_at: string
@@ -426,6 +427,7 @@ export type Database = {
           min_stock_level?: number | null
           name: string
           price: number
+          supplier_id?: string | null
           supplier_name?: string | null
           unit?: string | null
           updated_at?: string
@@ -444,6 +446,7 @@ export type Database = {
           min_stock_level?: number | null
           name?: string
           price?: number
+          supplier_id?: string | null
           supplier_name?: string | null
           unit?: string | null
           updated_at?: string
@@ -454,6 +457,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -735,6 +745,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_self_supplier: {
+        Args: { business_id: string; business_name: string }
+        Returns: string
+      }
       user_has_business_access: {
         Args: { business_id: string }
         Returns: boolean
