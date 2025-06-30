@@ -42,7 +42,7 @@ export interface ProductWithSupplier extends Product {
 export type ProductType = 'standalone' | 'parent' | 'variant' | 'bulk';
 
 export interface ProductVariantData {
-  type: ProductType;
+  type?: ProductType; // Made optional since it's not stored in the database
   variant_type?: string;
   variant_value?: string;
   sku?: string;
