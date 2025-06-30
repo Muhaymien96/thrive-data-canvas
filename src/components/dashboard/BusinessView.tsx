@@ -2,6 +2,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDashboardData } from '@/hooks/useSupabaseData';
+import { useProducts } from '@/hooks/useSupabaseData';
+import { useCustomers } from '@/hooks/useCustomers';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Users, Package, CreditCard } from 'lucide-react';
 import type { BusinessWithAll } from '@/types/database';
@@ -12,6 +14,13 @@ interface BusinessViewProps {
 
 export const BusinessView = ({ business }: BusinessViewProps) => {
   const { data: dashboardData, isLoading, error } = useDashboardData(business);
+  
+  // Get business ID for specific business queries
+  const businessId = business === 'All' ? undefined : (typeof business === 'string' ? business : business.id);
+  
+  // Fetch products and customers data separately
+  const { data: products = [] } = useProducts(businessId);
+  const { data: customers = [] } = useCustomers(businessId);
 
   if (isLoading) {
     return (
@@ -82,7 +91,7 @@ export const BusinessView = ({ business }: BusinessViewProps) => {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{products.length}</div>
             <p className="text-xs text-muted-foreground">
               Products in inventory
             </p>
@@ -95,7 +104,7 @@ export const BusinessView = ({ business }: BusinessViewProps) => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{customers.length}</div>
             <p className="text-xs text-muted-foreground">
               Active customers
             </p>
