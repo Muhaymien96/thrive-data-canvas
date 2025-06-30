@@ -40,6 +40,7 @@ export const QuickAddCustomer = ({ businessId, onCustomerCreated, onCancel }: Qu
         total_purchases: 0,
         outstanding_balance: 0,
         invoice_preference: 'email' as const,
+        last_purchase: null,
       };
 
       const newCustomer = await createCustomer.mutateAsync(customerData);
