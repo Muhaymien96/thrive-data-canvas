@@ -14,6 +14,7 @@ interface BankDetails {
   accountNumber: string;
   bankName: string;
   branchCode: string;
+  [key: string]: any; // Make it compatible with Json type
 }
 
 interface EmployeeFormProps {
@@ -96,6 +97,7 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
     }
 
     try {
+      // Ensure required fields are present
       const employeeData = {
         name: formData.name!.trim(),
         email: formData.email?.trim() || null,
