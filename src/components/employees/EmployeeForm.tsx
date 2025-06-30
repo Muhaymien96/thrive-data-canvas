@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X } from 'lucide-react';
-import type { Employee } from '@/types/transaction';
+import type { Employee } from '@/types/database';
 
 interface EmployeeFormProps {
   employee?: Employee | null;
@@ -19,14 +19,14 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
     name: employee?.name || '',
     email: employee?.email || '',
     phone: employee?.phone || '',
-    business: employee?.business || 'Fish',
+    business_id: employee?.business_id || '',
     position: employee?.position || '',
-    hourlyRate: employee?.hourlyRate || 0,
+    hourly_rate: employee?.hourly_rate || 0,
     salary: employee?.salary || 0,
-    startDate: employee?.startDate || new Date().toISOString().split('T')[0],
+    start_date: employee?.start_date || new Date().toISOString().split('T')[0],
     status: employee?.status || 'active',
-    paymentMethod: employee?.paymentMethod || 'bank_transfer',
-    bankDetails: employee?.bankDetails || {
+    payment_method: employee?.payment_method || 'bank_transfer',
+    bank_details: employee?.bank_details || {
       accountNumber: '',
       bankName: '',
       branchCode: ''
@@ -64,9 +64,8 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
                 <Input
                   id="email"
                   type="email"
-                  value={formData.email}
+                  value={formData.email || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  required
                 />
               </div>
             </div>
@@ -76,7 +75,7 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
                 <Label htmlFor="phone">Phone</Label>
                 <Input
                   id="phone"
-                  value={formData.phone}
+                  value={formData.phone || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                 />
               </div>
@@ -84,7 +83,7 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
                 <Label htmlFor="position">Position</Label>
                 <Input
                   id="position"
-                  value={formData.position}
+                  value={formData.position || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
                   required
                 />
@@ -93,64 +92,20 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="business">Business</Label>
-                <Select
-                  value={formData.business}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, business: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Fish">Fish</SelectItem>
-                    <SelectItem value="Honey">Honey</SelectItem>
-                    <SelectItem value="Mushrooms">Mushrooms</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
                 <Label htmlFor="startDate">Start Date</Label>
                 <Input
                   id="startDate"
                   type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                  value={formData.start_date || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
                   required
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="hourlyRate">Hourly Rate (R)</Label>
-                <Input
-                  id="hourlyRate"
-                  type="number"
-                  value={formData.hourlyRate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, hourlyRate: Number(e.target.value) }))}
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-              <div>
-                <Label htmlFor="salary">Monthly Salary (R)</Label>
-                <Input
-                  id="salary"
-                  type="number"
-                  value={formData.salary}
-                  onChange={(e) => setFormData(prev => ({ ...prev, salary: Number(e.target.value) }))}
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="status">Status</Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as 'active' | 'inactive' }))}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -161,25 +116,51 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="paymentMethod">Payment Method</Label>
-                <Select
-                  value={formData.paymentMethod}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value as any }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="check">Check</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="hourlyRate">Hourly Rate (R)</Label>
+                <Input
+                  id="hourlyRate"
+                  type="number"
+                  value={formData.hourly_rate || 0}
+                  onChange={(e) => setFormData(prev => ({ ...prev, hourly_rate: Number(e.target.value) }))}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <Label htmlFor="salary">Monthly Salary (R)</Label>
+                <Input
+                  id="salary"
+                  type="number"
+                  value={formData.salary || 0}
+                  onChange={(e) => setFormData(prev => ({ ...prev, salary: Number(e.target.value) }))}
+                  min="0"
+                  step="0.01"
+                />
               </div>
             </div>
 
-            {formData.paymentMethod === 'bank_transfer' && (
+            <div>
+              <Label htmlFor="paymentMethod">Payment Method</Label>
+              <Select
+                value={formData.payment_method}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="check">Check</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formData.payment_method === 'bank_transfer' && (
               <div className="space-y-4 p-4 border rounded-lg">
                 <h3 className="font-medium text-slate-900">Bank Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -187,10 +168,10 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
                     <Label htmlFor="accountNumber">Account Number</Label>
                     <Input
                       id="accountNumber"
-                      value={formData.bankDetails?.accountNumber || ''}
+                      value={(formData.bank_details as any)?.accountNumber || ''}
                       onChange={(e) => setFormData(prev => ({
                         ...prev,
-                        bankDetails: { ...prev.bankDetails!, accountNumber: e.target.value }
+                        bank_details: { ...(prev.bank_details as any), accountNumber: e.target.value }
                       }))}
                     />
                   </div>
@@ -198,10 +179,10 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
                     <Label htmlFor="bankName">Bank Name</Label>
                     <Input
                       id="bankName"
-                      value={formData.bankDetails?.bankName || ''}
+                      value={(formData.bank_details as any)?.bankName || ''}
                       onChange={(e) => setFormData(prev => ({
                         ...prev,
-                        bankDetails: { ...prev.bankDetails!, bankName: e.target.value }
+                        bank_details: { ...(prev.bank_details as any), bankName: e.target.value }
                       }))}
                     />
                   </div>
@@ -209,10 +190,10 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
                     <Label htmlFor="branchCode">Branch Code</Label>
                     <Input
                       id="branchCode"
-                      value={formData.bankDetails?.branchCode || ''}
+                      value={(formData.bank_details as any)?.branchCode || ''}
                       onChange={(e) => setFormData(prev => ({
                         ...prev,
-                        bankDetails: { ...prev.bankDetails!, branchCode: e.target.value }
+                        bank_details: { ...(prev.bank_details as any), branchCode: e.target.value }
                       }))}
                     />
                   </div>

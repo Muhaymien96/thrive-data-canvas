@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Edit, Trash2, DollarSign } from 'lucide-react';
 import { EmployeeForm } from './EmployeeForm';
 import { CostTrackingForm } from './CostTrackingForm';
-import type { Employee, BusinessWithAll } from '@/types/transaction';
+import type { Employee, BusinessWithAll } from '@/types/database';
 
 interface EmployeesViewProps {
   selectedBusiness: BusinessWithAll;
@@ -19,30 +19,34 @@ const mockEmployees: Employee[] = [
     name: 'John Smith',
     email: 'john@business.com',
     phone: '+27 11 123 4567',
-    business: 'Fish',
+    business_id: 'fish-business-id',
     position: 'Sales Manager',
-    hourlyRate: 150,
+    hourly_rate: 150,
     salary: 25000,
-    startDate: '2024-01-15',
+    start_date: '2024-01-15',
     status: 'active',
-    paymentMethod: 'bank_transfer',
-    bankDetails: {
+    payment_method: 'bank_transfer',
+    bank_details: {
       accountNumber: '1234567890',
       bankName: 'FNB',
       branchCode: '250655'
-    }
+    },
+    created_at: '2024-01-15T00:00:00Z',
+    updated_at: '2024-01-15T00:00:00Z'
   },
   {
     id: '2',
     name: 'Sarah Johnson',
     email: 'sarah@business.com',
     phone: '+27 11 234 5678',
-    business: 'Honey',
+    business_id: 'honey-business-id',
     position: 'Production Assistant',
-    hourlyRate: 85,
-    startDate: '2024-02-01',
+    hourly_rate: 85,
+    start_date: '2024-02-01',
     status: 'active',
-    paymentMethod: 'cash'
+    payment_method: 'cash',
+    created_at: '2024-02-01T00:00:00Z',
+    updated_at: '2024-02-01T00:00:00Z'
   }
 ];
 
@@ -55,13 +59,13 @@ export const EmployeesView = ({ selectedBusiness }: EmployeesViewProps) => {
 
   const filteredEmployees = employees.filter(emp => {
     const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         emp.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesBusiness = selectedBusiness === 'All' || emp.business === selectedBusiness;
+                         (emp.email && emp.email.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesBusiness = selectedBusiness === 'All' || emp.business_id === (selectedBusiness as any)?.id;
     return matchesSearch && matchesBusiness;
   });
 
   const totalMonthlyCosts = filteredEmployees.reduce((sum, emp) => {
-    return sum + (emp.salary || emp.hourlyRate * 160); // Assume 160 hours/month
+    return sum + ((emp.salary || 0) + ((emp.hourly_rate || 0) * 160)); // Assume 160 hours/month
   }, 0);
 
   return (
@@ -83,7 +87,6 @@ export const EmployeesView = ({ selectedBusiness }: EmployeesViewProps) => {
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="pb-2">
@@ -115,7 +118,6 @@ export const EmployeesView = ({ selectedBusiness }: EmployeesViewProps) => {
         </Card>
       </div>
 
-      {/* Search and Filters */}
       <Card>
         <CardHeader>
           <div className="flex items-center space-x-4">
@@ -137,7 +139,6 @@ export const EmployeesView = ({ selectedBusiness }: EmployeesViewProps) => {
                 <tr className="border-b border-slate-200">
                   <th className="text-left py-2 px-4 font-medium text-slate-600">Name</th>
                   <th className="text-left py-2 px-4 font-medium text-slate-600">Position</th>
-                  <th className="text-left py-2 px-4 font-medium text-slate-600">Business</th>
                   <th className="text-left py-2 px-4 font-medium text-slate-600">Rate/Salary</th>
                   <th className="text-left py-2 px-4 font-medium text-slate-600">Status</th>
                   <th className="text-left py-2 px-4 font-medium text-slate-600">Actions</th>
@@ -153,17 +154,8 @@ export const EmployeesView = ({ selectedBusiness }: EmployeesViewProps) => {
                       </div>
                     </td>
                     <td className="py-2 px-4 text-sm">{employee.position}</td>
-                    <td className="py-2 px-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        employee.business === 'Fish' ? 'bg-blue-100 text-blue-800' :
-                        employee.business === 'Honey' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {employee.business}
-                      </span>
-                    </td>
                     <td className="py-2 px-4 text-sm">
-                      {employee.salary ? `R${employee.salary.toLocaleString()}/month` : `R${employee.hourlyRate}/hour`}
+                      {employee.salary ? `R${employee.salary.toLocaleString()}/month` : `R${employee.hourly_rate}/hour`}
                     </td>
                     <td className="py-2 px-4">
                       <Badge variant={employee.status === 'active' ? 'default' : 'secondary'}>

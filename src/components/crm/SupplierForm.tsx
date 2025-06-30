@@ -1,146 +1,119 @@
 
 import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
-import type { Business, BusinessWithAll } from '@/types/transaction';
+import type { Supplier } from '@/types/database';
 
 interface SupplierFormProps {
+  supplier?: Supplier | null;
   onClose: () => void;
-  selectedBusiness: BusinessWithAll;
+  onSave: (supplier: Supplier) => void;
 }
 
-export const SupplierForm = ({ onClose, selectedBusiness }: SupplierFormProps) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    business: (selectedBusiness === 'All' ? 'Fish' : selectedBusiness) as Business,
-    category: '',
+export const SupplierForm = ({ supplier, onClose, onSave }: SupplierFormProps) => {
+  const [formData, setFormData] = useState<Partial<Supplier>>({
+    name: supplier?.name || '',
+    email: supplier?.email || '',
+    phone: supplier?.phone || '',
+    address: supplier?.address || '',
+    category: supplier?.category || '',
+    rating: supplier?.rating || 0,
+    total_spent: supplier?.total_spent || 0
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Supplier data:', formData);
-    onClose();
-  };
-
-  const getCategoriesForBusiness = (business: string) => {
-    switch (business) {
-      case 'Fish':
-        return ['Seafood Supplier', 'Packaging', 'Equipment', 'Logistics'];
-      case 'Honey':
-        return ['Beekeeping Supplies', 'Packaging', 'Equipment', 'Processing'];
-      case 'Mushrooms':
-        return ['Growing Supplies', 'Packaging', 'Equipment', 'Seeds/Spores'];
-      default:
-        return ['General', 'Equipment', 'Packaging', 'Services'];
-    }
+    onSave(formData as Supplier);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Add New Supplier</h2>
-        <Button variant="outline" onClick={onClose}>
-          <X size={16} />
-        </Button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="name">Supplier Name *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="business">Business *</Label>
-            <Select
-              value={formData.business}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, business: value as Business }))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Fish">Fish</SelectItem>
-                <SelectItem value="Honey">Honey</SelectItem>
-                <SelectItem value="Mushrooms">Mushrooms</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="email">Email *</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="phone">Phone *</Label>
-            <Input
-              id="phone"
-              value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              required
-            />
-          </div>
-        </div>
-
-        <div>
-          <Label htmlFor="address">Address *</Label>
-          <Input
-            id="address"
-            value={formData.address}
-            onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="category">Category *</Label>
-          <Select
-            value={formData.category}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              {getCategoriesForBusiness(formData.business).map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex justify-end space-x-4 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <Card className="w-full max-w-lg mx-4">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>{supplier ? 'Edit Supplier' : 'Add New Supplier'}</CardTitle>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X size={16} />
           </Button>
-          <Button type="submit">
-            Add Supplier
-          </Button>
-        </div>
-      </form>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="name">Supplier Name</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="address">Address</Label>
+              <Textarea
+                id="address"
+                value={formData.address || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Input
+                  id="category"
+                  value={formData.category || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="rating">Rating (1-5)</Label>
+                <Input
+                  id="rating"
+                  type="number"
+                  min="1"
+                  max="5"
+                  value={formData.rating || 0}
+                  onChange={(e) => setFormData(prev => ({ ...prev, rating: Number(e.target.value) }))}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                {supplier ? 'Update Supplier' : 'Add Supplier'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

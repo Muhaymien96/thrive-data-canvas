@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
-import type { Employee, Transaction } from '@/types/transaction';
+import type { Employee, Transaction } from '@/types/database';
 
 interface CostTrackingFormProps {
   employees: Employee[];
@@ -17,22 +17,22 @@ interface CostTrackingFormProps {
 
 export const CostTrackingForm = ({ employees, onClose, onSave }: CostTrackingFormProps) => {
   const [formData, setFormData] = useState({
-    employeeId: '',
-    costType: 'salary' as 'salary' | 'wages' | 'benefits' | 'bonus' | 'overtime',
+    employee_id: '',
+    cost_type: 'salary' as 'salary' | 'wages' | 'benefits' | 'bonus' | 'overtime',
     amount: 0,
-    hoursWorked: 0,
+    hours_worked: 0,
     description: '',
     date: new Date().toISOString().split('T')[0],
-    paymentMethod: 'bank_transfer' as const
+    payment_method: 'bank_transfer' as const
   });
 
-  const selectedEmployee = employees.find(emp => emp.id === formData.employeeId);
+  const selectedEmployee = employees.find(emp => emp.id === formData.employee_id);
 
   const calculateAmount = () => {
     if (!selectedEmployee) return 0;
     
-    if (formData.costType === 'wages' && formData.hoursWorked > 0) {
-      return selectedEmployee.hourlyRate * formData.hoursWorked;
+    if (formData.cost_type === 'wages' && formData.hours_worked > 0) {
+      return (selectedEmployee.hourly_rate || 0) * formData.hours_worked;
     }
     
     return formData.amount;
@@ -43,23 +43,22 @@ export const CostTrackingForm = ({ employees, onClose, onSave }: CostTrackingFor
     
     if (!selectedEmployee) return;
 
-    const transaction: Transaction = {
-      id: Date.now().toString(),
+    const transaction: Partial<Transaction> = {
       date: formData.date,
-      business: selectedEmployee.business,
+      business_id: selectedEmployee.business_id,
       type: 'employee_cost',
       amount: calculateAmount(),
-      description: formData.description || `${formData.costType} payment for ${selectedEmployee.name}`,
-      customer: selectedEmployee.name,
-      paymentMethod: formData.paymentMethod,
-      employeeId: selectedEmployee.id,
-      employeeName: selectedEmployee.name,
-      costType: formData.costType,
-      hoursWorked: formData.hoursWorked,
-      hourlyRate: selectedEmployee.hourlyRate
+      description: formData.description || `${formData.cost_type} payment for ${selectedEmployee.name}`,
+      customer_name: selectedEmployee.name,
+      payment_method: formData.payment_method,
+      employee_id: selectedEmployee.id,
+      employee_name: selectedEmployee.name,
+      cost_type: formData.cost_type,
+      hours_worked: formData.hours_worked,
+      hourly_rate: selectedEmployee.hourly_rate
     };
 
-    onSave(transaction);
+    onSave(transaction as Transaction);
   };
 
   return (
@@ -76,8 +75,8 @@ export const CostTrackingForm = ({ employees, onClose, onSave }: CostTrackingFor
             <div>
               <Label htmlFor="employee">Employee</Label>
               <Select
-                value={formData.employeeId}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, employeeId: value }))}
+                value={formData.employee_id}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, employee_id: value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select employee" />
@@ -95,8 +94,8 @@ export const CostTrackingForm = ({ employees, onClose, onSave }: CostTrackingFor
             <div>
               <Label htmlFor="costType">Cost Type</Label>
               <Select
-                value={formData.costType}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, costType: value as typeof formData.costType }))}
+                value={formData.cost_type}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, cost_type: value as typeof formData.cost_type }))}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -122,26 +121,26 @@ export const CostTrackingForm = ({ employees, onClose, onSave }: CostTrackingFor
               />
             </div>
 
-            {formData.costType === 'wages' && selectedEmployee && (
+            {formData.cost_type === 'wages' && selectedEmployee && (
               <div>
                 <Label htmlFor="hoursWorked">Hours Worked</Label>
                 <Input
                   id="hoursWorked"
                   type="number"
-                  value={formData.hoursWorked}
-                  onChange={(e) => setFormData(prev => ({ ...prev, hoursWorked: Number(e.target.value) }))}
+                  value={formData.hours_worked}
+                  onChange={(e) => setFormData(prev => ({ ...prev, hours_worked: Number(e.target.value) }))}
                   min="0"
                   step="0.5"
                 />
-                {formData.hoursWorked > 0 && (
+                {formData.hours_worked > 0 && (
                   <p className="text-sm text-slate-600 mt-1">
-                    Calculated amount: R{(selectedEmployee.hourlyRate * formData.hoursWorked).toFixed(2)}
+                    Calculated amount: R{((selectedEmployee.hourly_rate || 0) * formData.hours_worked).toFixed(2)}
                   </p>
                 )}
               </div>
             )}
 
-            {formData.costType !== 'wages' && (
+            {formData.cost_type !== 'wages' && (
               <div>
                 <Label htmlFor="amount">Amount (R)</Label>
                 <Input
@@ -159,8 +158,8 @@ export const CostTrackingForm = ({ employees, onClose, onSave }: CostTrackingFor
             <div>
               <Label htmlFor="paymentMethod">Payment Method</Label>
               <Select
-                value={formData.paymentMethod}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, paymentMethod: value as any }))}
+                value={formData.payment_method}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value as any }))}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -187,7 +186,7 @@ export const CostTrackingForm = ({ employees, onClose, onSave }: CostTrackingFor
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={!formData.employeeId}>
+              <Button type="submit" disabled={!formData.employee_id}>
                 Record Cost
               </Button>
             </div>
