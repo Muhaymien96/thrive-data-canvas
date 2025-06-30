@@ -1,33 +1,21 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { X, Plus } from 'lucide-react';
 import type { ProductType } from '@/types/database';
-
-interface VariantData {
-  variant_type: string;
-  variant_value: string;
-  sku: string;
-  cost: string;
-  price: string;
-  currentStock: string;
-  minStockLevel: string;
-  maxStock: string;
-  conversionFactor: string;
-}
+import type { VariantFormData } from '@/types/product';
 
 interface VariantFormProps {
   productType: ProductType;
   onProductTypeChange: (type: ProductType) => void;
   parentProductId?: string;
   onParentProductChange: (id: string) => void;
-  variants: VariantData[];
-  onVariantsChange: (variants: VariantData[]) => void;
+  variants: VariantFormData[];
+  onVariantsChange: (variants: VariantFormData[]) => void;
   availableParents: Array<{ id: string; name: string }>;
   baseProductName: string;
 }
@@ -43,7 +31,7 @@ export const VariantForm = ({
   baseProductName
 }: VariantFormProps) => {
   const addVariant = () => {
-    const newVariant: VariantData = {
+    const newVariant: VariantFormData = {
       variant_type: 'weight',
       variant_value: '',
       sku: '',
@@ -62,7 +50,7 @@ export const VariantForm = ({
     onVariantsChange(newVariants);
   };
 
-  const updateVariant = (index: number, field: keyof VariantData, value: string) => {
+  const updateVariant = (index: number, field: keyof VariantFormData, value: string) => {
     const newVariants = [...variants];
     newVariants[index] = { ...newVariants[index], [field]: value };
     onVariantsChange(newVariants);
