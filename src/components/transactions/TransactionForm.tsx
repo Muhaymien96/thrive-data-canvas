@@ -4,11 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Plus } from 'lucide-react';
+import { X } from 'lucide-react';
 import { QuickAddCustomer } from './QuickAddCustomer';
 import { QuickAddSupplier } from './QuickAddSupplier';
+import { TransactionTypeSelector } from './forms/TransactionTypeSelector';
+import { ProductSelector } from './forms/ProductSelector';
+import { CustomerSelector } from './forms/CustomerSelector';
+import { SupplierSelector } from './forms/SupplierSelector';
+import { EmployeeSelector } from './forms/EmployeeSelector';
+import { PaymentFields } from './forms/PaymentFields';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useSuppliers } from '@/hooks/useSuppliers';
 import { useProducts } from '@/hooks/useProducts';
@@ -82,7 +87,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     const transactionData = {
       ...formData,
       business_id: businessId,
-      invoice_generated: Boolean(formData.invoice_generated)
+      invoice_generated: Boolean(formData.invoice_generated || false)
     };
 
     // Clear unused fields based on transaction type
@@ -118,6 +123,22 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     }
 
     onSave(transactionData);
+  };
+
+  const handleTransactionTypeChange = (value: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      type: value,
+      customer_id: null,
+      supplier_id: null,
+      employee_id: null,
+      customer_name: '',
+      hourly_rate: null,
+      hours_worked: null
+    }));
+    setShowQuickAddCustomer(false);
+    setShowQuickAddSupplier(false);
+    setSelectedProductId('none');
   };
 
   const handleCustomerCreated = (customerId: string, customerName: string) => {
@@ -193,74 +214,21 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="type">Transaction Type</Label>
-              <Select
-                value={formData.type || 'sale'}
-                onValueChange={(value) => {
-                  setFormData(prev => ({ 
-                    ...prev, 
-                    type: value,
-                    customer_id: null,
-                    supplier_id: null,
-                    employee_id: null,
-                    customer_name: '',
-                    hourly_rate: null,
-                    hours_worked: null
-                  }));
-                  setShowQuickAddCustomer(false);
-                  setShowQuickAddSupplier(false);
-                  setSelectedProductId('none');
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sale">Sale</SelectItem>
-                  <SelectItem value="expense">Expense</SelectItem>
-                  <SelectItem value="salary">Employee Salary</SelectItem>
-                  <SelectItem value="refund">Refund</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <TransactionTypeSelector 
+              value={formData.type || 'sale'} 
+              onValueChange={handleTransactionTypeChange} 
+            />
 
             {/* Product Selection for Sales */}
             {formData.type === 'sale' && (
-              <div>
-                <Label htmlFor="product">Product (Optional)</Label>
-                <Select
-                  value={selectedProductId || 'none'}
-                  onValueChange={handleProductSelect}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a product (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No product selected</SelectItem>
-                    {products.map((product) => (
-                      <SelectItem key={product.id} value={product.id}>
-                        {product.name} - R{product.price}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Quantity field - only show if product is selected */}
-            {selectedProductId && selectedProductId !== 'none' && formData.type === 'sale' && (
-              <div>
-                <Label htmlFor="quantity">Quantity</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  value={quantity}
-                  onChange={(e) => setQuantity(Number(e.target.value))}
-                  min="1"
-                  step="1"
-                />
-              </div>
+              <ProductSelector
+                products={products}
+                selectedProductId={selectedProductId}
+                quantity={quantity}
+                onProductSelect={handleProductSelect}
+                onQuantityChange={setQuantity}
+                showQuantity={selectedProductId !== '' && selectedProductId !== 'none'}
+              />
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -291,120 +259,35 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
 
             {/* Customer Selection for Sales */}
             {formData.type === 'sale' && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label>Customer</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowQuickAddCustomer(!showQuickAddCustomer)}
-                  >
-                    <Plus size={14} className="mr-1" />
-                    Add New
-                  </Button>
-                </div>
-                <Select
-                  value={formData.customer_id || 'none'}
-                  onValueChange={handleCustomerSelect}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select customer or add new" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No customer selected</SelectItem>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name} {customer.email && `(${customer.email})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <CustomerSelector
+                customers={customers}
+                selectedCustomerId={formData.customer_id}
+                onCustomerSelect={handleCustomerSelect}
+                onAddNewClick={() => setShowQuickAddCustomer(!showQuickAddCustomer)}
+              />
             )}
 
             {/* Supplier Selection for Expenses */}
             {formData.type === 'expense' && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label>Supplier</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowQuickAddSupplier(!showQuickAddSupplier)}
-                  >
-                    <Plus size={14} className="mr-1" />
-                    Add New
-                  </Button>
-                </div>
-                <Select
-                  value={formData.supplier_id || 'none'}
-                  onValueChange={handleSupplierSelect}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select supplier or add new" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No supplier selected</SelectItem>
-                    {suppliers.map((supplier) => (
-                      <SelectItem key={supplier.id} value={supplier.id}>
-                        {supplier.name} {supplier.category && `(${supplier.category})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <SupplierSelector
+                suppliers={suppliers}
+                selectedSupplierId={formData.supplier_id}
+                onSupplierSelect={handleSupplierSelect}
+                onAddNewClick={() => setShowQuickAddSupplier(!showQuickAddSupplier)}
+              />
             )}
 
             {/* Employee Selection for Salary */}
             {formData.type === 'salary' && (
-              <>
-                <div>
-                  <Label>Employee</Label>
-                  <Select
-                    value={formData.employee_id || 'none'}
-                    onValueChange={handleEmployeeSelect}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select employee" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No employee selected</SelectItem>
-                      {employees.map((employee) => (
-                        <SelectItem key={employee.id} value={employee.id}>
-                          {employee.name} {employee.position && `(${employee.position})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="hourly_rate">Hourly Rate (R)</Label>
-                    <Input
-                      id="hourly_rate"
-                      type="number"
-                      value={formData.hourly_rate || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, hourly_rate: Number(e.target.value) }))}
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="hours_worked">Hours Worked</Label>
-                    <Input
-                      id="hours_worked"
-                      type="number"
-                      value={formData.hours_worked || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, hours_worked: Number(e.target.value) }))}
-                      min="0"
-                      step="0.1"
-                    />
-                  </div>
-                </div>
-              </>
+              <EmployeeSelector
+                employees={employees}
+                selectedEmployeeId={formData.employee_id}
+                hourlyRate={formData.hourly_rate}
+                hoursWorked={formData.hours_worked}
+                onEmployeeSelect={handleEmployeeSelect}
+                onHourlyRateChange={(rate) => setFormData(prev => ({ ...prev, hourly_rate: rate }))}
+                onHoursWorkedChange={(hours) => setFormData(prev => ({ ...prev, hours_worked: hours }))}
+              />
             )}
 
             {/* Generic Customer Name for manual entry */}
@@ -426,42 +309,12 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="payment_method">Payment Method</Label>
-                <Select
-                  value={formData.payment_method || 'cash'}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="payment_status">Payment Status</Label>
-                <Select
-                  value={formData.payment_status || 'pending'}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, payment_status: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
-                    <SelectItem value="partial">Partial</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            <PaymentFields
+              paymentMethod={formData.payment_method || 'cash'}
+              paymentStatus={formData.payment_status || 'pending'}
+              onPaymentMethodChange={(method) => setFormData(prev => ({ ...prev, payment_method: method }))}
+              onPaymentStatusChange={(status) => setFormData(prev => ({ ...prev, payment_status: status }))}
+            />
 
             <div>
               <Label htmlFor="description">Description</Label>
