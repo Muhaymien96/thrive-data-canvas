@@ -38,7 +38,7 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
       </div>
 
       {/* Payment Notifications */}
-      <PaymentNotifications selectedBusiness={selectedBusiness} />
+      <PaymentNotifications />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -171,7 +171,7 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <SupplierForm 
               onClose={() => setShowForm(false)} 
-              defaultBusiness={selectedBusiness}
+              selectedBusiness={selectedBusiness}
             />
           </div>
         </div>

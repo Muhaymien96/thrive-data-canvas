@@ -16,12 +16,19 @@ export interface Transaction {
 export interface Supplier {
   id: number;
   name: string;
-  productType: string;
-  lastOrderDate: string;
-  contactEmail: string;
+  email: string;
   phone: string;
-  outstandingBalance: number;
-  creditTerms: number; // days
+  address: string;
+  business: string;
+  category: string;
+  totalSpent: number;
+  rating: number;
+  lastOrder: string;
+  productType?: string;
+  lastOrderDate?: string;
+  contactEmail?: string;
+  outstandingBalance?: number;
+  creditTerms?: number;
 }
 
 export interface Customer {
@@ -126,11 +133,40 @@ export interface ComplianceDocument {
   name: string;
   type: 'certificate' | 'license' | 'permit' | 'insurance' | 'other';
   business: Business | 'All';
+  category: string;
   uploadDate: string;
   expiryDate?: string;
-  status: 'active' | 'expired' | 'expiring-soon';
+  dueDate?: string;
+  status: 'active' | 'expired' | 'expiring-soon' | 'completed' | 'pending' | 'overdue';
   fileUrl?: string;
   notes?: string;
+}
+
+export interface ComplianceRequirement {
+  id: number;
+  title: string;
+  description: string;
+  business: Business | 'All';
+  status: 'completed' | 'pending' | 'overdue';
+  dueDate: string;
+}
+
+export interface ComplianceDeadline {
+  id: number;
+  title: string;
+  description: string;
+  date: string;
+  daysLeft: number;
+}
+
+export interface ComplianceData {
+  documents: ComplianceDocument[];
+  requirements: ComplianceRequirement[];
+  upcomingDeadlines: ComplianceDeadline[];
+  completed: number;
+  pending: number;
+  overdue: number;
+  overallProgress: number;
 }
 
 export const mockTransactions: Transaction[] = [
@@ -153,30 +189,51 @@ export const mockSuppliers: Supplier[] = [
   {
     id: 1,
     name: 'Atlantic Fisheries',
+    email: 'orders@atlanticfish.com',
+    phone: '+1-555-0123',
+    address: '123 Harbor Drive, Coastal City',
+    business: 'Fish',
+    category: 'Seafood Supplier',
+    totalSpent: 25000,
+    rating: 4.5,
+    lastOrder: '2025-05-25',
     productType: 'Fresh Fish',
     lastOrderDate: '2025-05-25',
     contactEmail: 'orders@atlanticfish.com',
-    phone: '+1-555-0123',
     outstandingBalance: 2500,
     creditTerms: 30
   },
   {
     id: 2,
     name: 'Golden Hive Apiaries',
+    email: 'supply@goldenhive.com',
+    phone: '+1-555-0124',
+    address: '456 Meadow Lane, Countryside',
+    business: 'Honey',
+    category: 'Beekeeping Supplies',
+    totalSpent: 18000,
+    rating: 4.8,
+    lastOrder: '2025-05-20',
     productType: 'Raw Honey',
     lastOrderDate: '2025-05-20',
     contactEmail: 'supply@goldenhive.com',
-    phone: '+1-555-0124',
     outstandingBalance: 0,
     creditTerms: 15
   },
   {
     id: 3,
     name: 'Forest Floor Farms',
+    email: 'wholesale@forestfloor.com',
+    phone: '+1-555-0125',
+    address: '789 Forest Road, Woodland Area',
+    business: 'Mushrooms',
+    category: 'Growing Supplies',
+    totalSpent: 22000,
+    rating: 4.2,
+    lastOrder: '2025-05-22',
     productType: 'Organic Mushrooms',
     lastOrderDate: '2025-05-22',
     contactEmail: 'wholesale@forestfloor.com',
-    phone: '+1-555-0125',
     outstandingBalance: 1800,
     creditTerms: 21
   }
@@ -604,9 +661,11 @@ export const mockComplianceDocuments: ComplianceDocument[] = [
     id: 1,
     name: 'Food Safety Certificate',
     type: 'certificate',
+    category: 'Food Safety',
     business: 'All',
     uploadDate: '2025-01-15',
     expiryDate: '2026-01-15',
+    dueDate: '2026-01-15',
     status: 'active',
     notes: 'Valid for all food handling operations'
   },
@@ -614,9 +673,11 @@ export const mockComplianceDocuments: ComplianceDocument[] = [
     id: 2,
     name: 'Fishing License',
     type: 'license',
+    category: 'Permits',
     business: 'Fish',
     uploadDate: '2025-03-01',
     expiryDate: '2025-12-31',
+    dueDate: '2025-12-31',
     status: 'expiring-soon',
     notes: 'Commercial fishing operations license'
   },
@@ -624,9 +685,11 @@ export const mockComplianceDocuments: ComplianceDocument[] = [
     id: 3,
     name: 'Organic Certification',
     type: 'certificate',
+    category: 'Certifications',
     business: 'Mushrooms',
     uploadDate: '2025-02-10',
     expiryDate: '2026-02-10',
+    dueDate: '2026-02-10',
     status: 'active',
     notes: 'Certified organic growing practices'
   },
@@ -634,11 +697,57 @@ export const mockComplianceDocuments: ComplianceDocument[] = [
     id: 4,
     name: 'Public Liability Insurance',
     type: 'insurance',
+    category: 'Insurance',
     business: 'All',
     uploadDate: '2024-12-01',
     expiryDate: '2025-05-15',
+    dueDate: '2025-05-15',
     status: 'expired',
     notes: 'Coverage for market stalls and events'
+  }
+];
+
+export const mockComplianceRequirements: ComplianceRequirement[] = [
+  {
+    id: 1,
+    title: 'Annual Food Safety Inspection',
+    description: 'Schedule and complete annual food safety inspection for all facilities',
+    business: 'All',
+    status: 'pending',
+    dueDate: '2025-07-01'
+  },
+  {
+    id: 2,
+    title: 'Fishing License Renewal',
+    description: 'Renew commercial fishing license before expiration',
+    business: 'Fish',
+    status: 'pending',
+    dueDate: '2025-12-31'
+  },
+  {
+    id: 3,
+    title: 'Organic Certification Review',
+    description: 'Annual review of organic certification requirements',
+    business: 'Mushrooms',
+    status: 'completed',
+    dueDate: '2025-02-10'
+  }
+];
+
+export const mockComplianceDeadlines: ComplianceDeadline[] = [
+  {
+    id: 1,
+    title: 'Insurance Policy Renewal',
+    description: 'Public Liability Insurance renewal required',
+    date: '2025-07-15',
+    daysLeft: 15
+  },
+  {
+    id: 2,
+    title: 'Health Department Inspection',
+    description: 'Quarterly health inspection scheduled',
+    date: '2025-07-30',
+    daysLeft: 30
   }
 ];
 
@@ -677,16 +786,7 @@ export const getSupplierTransactions = (supplierName: string, business?: string)
 
 export const getSuppliersByBusiness = (business: string) => {
   if (business === 'All') return mockSuppliers;
-  
-  const businessToProductType = {
-    'Fish': 'Fresh Fish',
-    'Honey': 'Raw Honey',
-    'Mushrooms': 'Organic Mushrooms'
-  };
-  
-  return mockSuppliers.filter(supplier => 
-    supplier.productType === businessToProductType[business as keyof typeof businessToProductType]
-  );
+  return mockSuppliers.filter(supplier => supplier.business === business);
 };
 
 export const getCustomersByBusiness = (business: string) => {
@@ -740,4 +840,26 @@ export const getComplianceDocumentsByBusiness = (business: Business | 'All'): Co
     return mockComplianceDocuments;
   }
   return mockComplianceDocuments.filter(doc => doc.business === business || doc.business === 'All');
+};
+
+export const getComplianceData = (business: Business | 'All'): ComplianceData => {
+  const documents = getComplianceDocumentsByBusiness(business);
+  const requirements = business === 'All' ? mockComplianceRequirements : mockComplianceRequirements.filter(req => req.business === business || req.business === 'All');
+  
+  const completed = documents.filter(doc => doc.status === 'completed').length + requirements.filter(req => req.status === 'completed').length;
+  const pending = documents.filter(doc => doc.status === 'pending').length + requirements.filter(req => req.status === 'pending').length;
+  const overdue = documents.filter(doc => doc.status === 'overdue').length + requirements.filter(req => req.status === 'overdue').length;
+  
+  const total = completed + pending + overdue;
+  const overallProgress = total > 0 ? Math.round((completed / total) * 100) : 100;
+  
+  return {
+    documents,
+    requirements,
+    upcomingDeadlines: mockComplianceDeadlines,
+    completed,
+    pending,
+    overdue,
+    overallProgress
+  };
 };

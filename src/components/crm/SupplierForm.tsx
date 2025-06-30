@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X } from 'lucide-react';
-import type { BusinessWithAll } from '@/types/transaction';
+import type { Business, BusinessWithAll } from '@/types/transaction';
 
 interface SupplierFormProps {
   onClose: () => void;
@@ -18,7 +18,7 @@ export const SupplierForm = ({ onClose, selectedBusiness }: SupplierFormProps) =
     email: '',
     phone: '',
     address: '',
-    business: selectedBusiness === 'All' ? 'Fish' : selectedBusiness,
+    business: (selectedBusiness === 'All' ? 'Fish' : selectedBusiness) as Business,
     category: '',
   });
 
@@ -66,7 +66,7 @@ export const SupplierForm = ({ onClose, selectedBusiness }: SupplierFormProps) =
             <Label htmlFor="business">Business *</Label>
             <Select
               value={formData.business}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, business: value }))}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, business: value as Business }))}
             >
               <SelectTrigger>
                 <SelectValue />
