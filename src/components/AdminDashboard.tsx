@@ -30,7 +30,6 @@ export const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const { data: businesses = [], isLoading, refetch } = useBusinesses();
 
-  // Show loading state while fetching businesses
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -42,7 +41,6 @@ export const AdminDashboard = () => {
     );
   }
 
-  // Show onboarding modal if user has no businesses and they want to create one
   if (showBusinessOnboarding) {
     return (
       <BusinessOnboarding 
@@ -54,7 +52,6 @@ export const AdminDashboard = () => {
     );
   }
 
-  // Business selection logic
   React.useEffect(() => {
     if (businesses.length === 1 && selectedBusiness === 'All') {
       setSelectedBusiness(businesses[0]);
@@ -90,7 +87,6 @@ export const AdminDashboard = () => {
     }
   };
 
-  // If no businesses exist, show welcome screen with option to create business
   if (businesses.length === 0) {
     return (
       <div className="min-h-screen bg-slate-50 flex w-full">

@@ -13,7 +13,6 @@ interface DashboardOverviewProps {
 export const DashboardOverview = ({ selectedBusiness }: DashboardOverviewProps) => {
   const { data: dashboardData, isLoading, error } = useDashboardData(selectedBusiness);
 
-  // Expense breakdown (mock data for now)
   const expenseData = [
     { name: 'Supplies', value: 40, color: '#8B5CF6' },
     { name: 'Labor', value: 30, color: '#06B6D4' },
@@ -78,7 +77,6 @@ export const DashboardOverview = ({ selectedBusiness }: DashboardOverviewProps) 
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="pb-2">
@@ -132,7 +130,6 @@ export const DashboardOverview = ({ selectedBusiness }: DashboardOverviewProps) 
         </Card>
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -187,7 +184,6 @@ export const DashboardOverview = ({ selectedBusiness }: DashboardOverviewProps) 
         </Card>
       </div>
 
-      {/* Recent Activity */}
       <Card>
         <CardHeader>
           <CardTitle>Recent Transactions</CardTitle>

@@ -1,14 +1,48 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { Customer } from '@/types/database';
 
 export const useCustomers = (businessId?: string) => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('customers-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'customers'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['customers', businessId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, businessId]);
+
   return useQuery({
     queryKey: ['customers', businessId],
     queryFn: async () => {
-      let query = supabase.from('customers').select('*').order('name');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      let query = supabase
+        .from('customers')
+        .select(`
+          *,
+          businesses!inner(owner_id)
+        `)
+        .eq('businesses.owner_id', user.id)
+        .order('name');
       
       if (businessId && businessId !== 'All') {
         query = query.eq('business_id', businessId);
@@ -32,6 +66,9 @@ export const useCreateCustomer = () => {
   
   return useMutation({
     mutationFn: async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       const { data, error } = await supabase
         .from('customers')
         .insert([customerData])
