@@ -78,18 +78,87 @@ export const useCreateEvent = () => {
       }
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       toast({
-        title: "Event Added",
-        description: `Successfully added event ${data.title}`,
+        title: "Event Created",
+        description: "Successfully created new event",
       });
     },
     onError: (error) => {
       console.error('Error creating event:', error);
       toast({
         title: "Error",
-        description: "Failed to add event. Please try again.",
+        description: "Failed to create event. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useUpdateEvent = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...updateData }: Partial<Event> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('events')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating event:', error);
+        throw error;
+      }
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast({
+        title: "Event Updated",
+        description: "Successfully updated event",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating event:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update event. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useDeleteEvent = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (eventId: string) => {
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', eventId);
+      
+      if (error) {
+        console.error('Error deleting event:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast({
+        title: "Event Deleted",
+        description: "Successfully deleted event",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting event:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete event. Please try again.",
         variant: "destructive",
       });
     },

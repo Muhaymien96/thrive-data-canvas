@@ -3,12 +3,14 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TransactionForm } from './TransactionForm';
 import { TransactionDetailsModal } from './TransactionDetailsModal';
 import { InvoiceGenerationModal } from './InvoiceGenerationModal';
 import { InvoiceViewModal } from './InvoiceViewModal';
 import { CSVUpload } from './CSVUpload';
 import { YocoCSVUpload } from './YocoCSVUpload';
+import { InvoiceGenerator } from '../products/InvoiceGenerator';
 import { useTransactions } from '@/hooks/useSupabaseData';
 import { useCreateTransaction } from '@/hooks/useCreateTransaction';
 import { Plus, Upload, CreditCard, FileText, Eye, Receipt, Package, User, Download } from 'lucide-react';
@@ -233,138 +235,151 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
         />
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Receipt size={20} />
-            <span>Transaction History</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-slate-600">Loading transactions...</span>
-            </div>
-          ) : transactions.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-200">
-                    <th className="text-left py-3 px-4 font-medium text-slate-600">Date</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-600">Type</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-600">Amount</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-600">Customer/Supplier/Employee</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-600">Product/Service</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-600">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-600">Invoice</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-600">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.map((transaction) => (
-                    <tr key={transaction.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="py-3 px-4 text-sm">{transaction.date}</td>
-                      <td className="py-3 px-4 text-sm">
-                        <Badge variant={getTransactionTypeColor(transaction.type)}>
-                          {transaction.type === 'salary' ? 'Employee Salary' : transaction.type}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4 text-sm font-medium">
-                        R{transaction.amount.toLocaleString()}
-                      </td>
-                      <td className="py-3 px-4 text-sm">
-                        {transaction.customer_name || 'N/A'}
-                        {transaction.customer_id && (
-                          <Badge variant="outline" className="ml-2 text-xs">Customer Linked</Badge>
-                        )}
-                        {transaction.supplier_id && (
-                          <Badge variant="outline" className="ml-2 text-xs">Supplier Linked</Badge>
-                        )}
-                        {transaction.employee_id && (
-                          <Badge variant="outline" className="ml-2 text-xs">Employee Linked</Badge>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-sm">
-                        {hasProductInfo(transaction.description || '') ? (
-                          <div className="flex items-center">
-                            <Package size={14} className="mr-1 text-blue-600" />
-                            <Badge variant="outline" className="text-xs">Product Sale</Badge>
-                          </div>
-                        ) : hasEmployeeInfo(transaction) ? (
-                          <div className="flex items-center">
-                            <User size={14} className="mr-1 text-purple-600" />
-                            <Badge variant="outline" className="text-xs">
-                              Salary Payment
-                              {transaction.hours_worked && ` (${transaction.hours_worked}h)`}
+      <Tabs defaultValue="transactions" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="transactions">Transaction History</TabsTrigger>
+          <TabsTrigger value="invoices">Invoices</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="transactions" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Receipt size={20} />
+                <span>Transaction History</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-3 text-slate-600">Loading transactions...</span>
+                </div>
+              ) : transactions.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-200">
+                        <th className="text-left py-3 px-4 font-medium text-slate-600">Date</th>
+                        <th className="text-left py-3 px-4 font-medium text-slate-600">Type</th>
+                        <th className="text-left py-3 px-4 font-medium text-slate-600">Amount</th>
+                        <th className="text-left py-3 px-4 font-medium text-slate-600">Customer/Supplier/Employee</th>
+                        <th className="text-left py-3 px-4 font-medium text-slate-600">Product/Service</th>
+                        <th className="text-left py-3 px-4 font-medium text-slate-600">Status</th>
+                        <th className="text-left py-3 px-4 font-medium text-slate-600">Invoice</th>
+                        <th className="text-left py-3 px-4 font-medium text-slate-600">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transactions.map((transaction) => (
+                        <tr key={transaction.id} className="border-b border-slate-100 hover:bg-slate-50">
+                          <td className="py-3 px-4 text-sm">{transaction.date}</td>
+                          <td className="py-3 px-4 text-sm">
+                            <Badge variant={getTransactionTypeColor(transaction.type)}>
+                              {transaction.type === 'salary' ? 'Employee Salary' : transaction.type}
                             </Badge>
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 text-xs">Ad-hoc</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-sm">
-                        <Badge className={`text-xs ${getStatusColor(transaction.payment_status || 'pending')}`}>
-                          {transaction.payment_status || 'pending'}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4 text-sm">
-                        {transaction.invoice_generated ? (
-                          <Badge className="bg-green-100 text-green-800 text-xs">
-                            {transaction.invoice_number || 'Generated'}
-                          </Badge>
-                        ) : (
-                          <span className="text-slate-400 text-xs">None</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewTransaction(transaction)}
-                          >
-                            <Eye size={14} />
-                          </Button>
-                          {transaction.invoice_generated ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewInvoice(transaction)}
-                            >
-                              <Download size={14} />
-                            </Button>
-                          ) : transaction.type === 'sale' ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleGenerateInvoice(transaction)}
-                            >
-                              <FileText size={14} />
-                            </Button>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <Receipt size={48} className="mx-auto text-slate-300 mb-4" />
-              <h3 className="text-lg font-medium text-slate-900 mb-2">No transactions found</h3>
-              <p className="text-slate-500 mb-4">
-                Start by adding your first transaction to track your business activity.
-              </p>
-              <Button onClick={() => setShowForm(true)} className="flex items-center space-x-2">
-                <Plus size={16} />
-                <span>Add Your First Transaction</span>
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                          </td>
+                          <td className="py-3 px-4 text-sm font-medium">
+                            R{transaction.amount.toLocaleString()}
+                          </td>
+                          <td className="py-3 px-4 text-sm">
+                            {transaction.customer_name || 'N/A'}
+                            {transaction.customer_id && (
+                              <Badge variant="outline" className="ml-2 text-xs">Customer Linked</Badge>
+                            )}
+                            {transaction.supplier_id && (
+                              <Badge variant="outline" className="ml-2 text-xs">Supplier Linked</Badge>
+                            )}
+                            {transaction.employee_id && (
+                              <Badge variant="outline" className="ml-2 text-xs">Employee Linked</Badge>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-sm">
+                            {hasProductInfo(transaction.description || '') ? (
+                              <div className="flex items-center">
+                                <Package size={14} className="mr-1 text-blue-600" />
+                                <Badge variant="outline" className="text-xs">Product Sale</Badge>
+                              </div>
+                            ) : hasEmployeeInfo(transaction) ? (
+                              <div className="flex items-center">
+                                <User size={14} className="mr-1 text-purple-600" />
+                                <Badge variant="outline" className="text-xs">
+                                  Salary Payment
+                                  {transaction.hours_worked && ` (${transaction.hours_worked}h)`}
+                                </Badge>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 text-xs">Ad-hoc</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-sm">
+                            <Badge className={`text-xs ${getStatusColor(transaction.payment_status || 'pending')}`}>
+                              {transaction.payment_status || 'pending'}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-sm">
+                            {transaction.invoice_generated ? (
+                              <Badge className="bg-green-100 text-green-800 text-xs">
+                                {transaction.invoice_number || 'Generated'}
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-400 text-xs">None</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-sm">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewTransaction(transaction)}
+                              >
+                                <Eye size={14} />
+                              </Button>
+                              {transaction.invoice_generated ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleViewInvoice(transaction)}
+                                >
+                                  <Download size={14} />
+                                </Button>
+                              ) : transaction.type === 'sale' ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleGenerateInvoice(transaction)}
+                                >
+                                  <FileText size={14} />
+                                </Button>
+                              ) : null}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Receipt size={48} className="mx-auto text-slate-300 mb-4" />
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">No transactions found</h3>
+                  <p className="text-slate-500 mb-4">
+                    Start by adding your first transaction to track your business activity.
+                  </p>
+                  <Button onClick={() => setShowForm(true)} className="flex items-center space-x-2">
+                    <Plus size={16} />
+                    <span>Add Your First Transaction</span>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="invoices" className="space-y-6">
+          <InvoiceGenerator selectedBusiness={selectedBusiness} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

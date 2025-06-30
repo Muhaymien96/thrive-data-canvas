@@ -102,13 +102,12 @@ export const EventDetails = ({ event, onClose }: EventDetailsProps) => {
   if (showEditForm) {
     return (
       <EventForm
-        event={event}
         businessId={event.business_id}
         onClose={() => setShowEditForm(false)}
         onSave={() => {
           setShowEditForm(false);
-          // Event will be refetched automatically due to query invalidation
         }}
+        initialData={event}
       />
     );
   }
@@ -143,7 +142,6 @@ export const EventDetails = ({ event, onClose }: EventDetailsProps) => {
         </CardHeader>
         
         <CardContent className="space-y-6">
-          {/* Event Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center space-x-3 text-gray-600">
               <Calendar size={20} />
@@ -179,7 +177,6 @@ export const EventDetails = ({ event, onClose }: EventDetailsProps) => {
             </div>
           )}
 
-          {/* Action Buttons */}
           <div className="flex flex-wrap gap-2 pt-4 border-t">
             <Button
               onClick={() => setShowChecklist(true)}
@@ -209,7 +206,6 @@ export const EventDetails = ({ event, onClose }: EventDetailsProps) => {
             </Button>
           </div>
 
-          {/* Status Management */}
           {event.status !== 'completed' && event.status !== 'cancelled' && (
             <div className="pt-4 border-t">
               <h4 className="font-medium text-gray-900 mb-3">Update Status</h4>

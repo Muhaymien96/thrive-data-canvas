@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 import { ProductForm } from './ProductForm';
 import { ProductTable } from './ProductTable';
 import { StockMovements } from './StockMovements';
-import { InvoiceGenerator } from './InvoiceGenerator';
 import { StockNotifications } from './StockNotifications';
 import { useProducts } from '@/hooks/useProducts';
-import { Plus, Package, TrendingUp, FileText } from 'lucide-react';
+import { Plus, Package, TrendingUp } from 'lucide-react';
 import type { BusinessWithAll } from '@/types/database';
 
 interface ProductsViewProps {
@@ -17,7 +16,7 @@ interface ProductsViewProps {
 
 export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
   const [showForm, setShowForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<'products' | 'stock' | 'invoices'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'stock'>('products');
   
   const businessId = selectedBusiness === 'All' ? undefined : (typeof selectedBusiness === 'string' ? selectedBusiness : selectedBusiness.id);
   const { data: products = [], isLoading, error } = useProducts(businessId);
@@ -89,7 +88,7 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Avg. Markup</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -125,16 +124,6 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
         >
           Stock Movements
         </button>
-        <button
-          onClick={() => setActiveTab('invoices')}
-          className={`pb-2 px-1 border-b-2 transition-colors ${
-            activeTab === 'invoices'
-              ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Invoices
-        </button>
       </div>
 
       {activeTab === 'products' && (
@@ -146,10 +135,6 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
       
       {activeTab === 'stock' && (
         <StockMovements selectedBusiness={selectedBusiness} />
-      )}
-      
-      {activeTab === 'invoices' && (
-        <InvoiceGenerator selectedBusiness={selectedBusiness} />
       )}
 
       {showForm && (

@@ -2,12 +2,11 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Edit, Trash2, User, DollarSign, Calendar, CreditCard } from 'lucide-react';
 import { EmployeeForm } from './EmployeeForm';
 import { CostTrackingForm } from './CostTrackingForm';
 import { useEmployees } from '@/hooks/useEmployees';
+import { Plus, Users, DollarSign, Clock, TrendingUp, Calculator } from 'lucide-react';
 import type { BusinessWithAll, Employee } from '@/types/database';
 
 interface EmployeesViewProps {
@@ -15,48 +14,48 @@ interface EmployeesViewProps {
 }
 
 export const EmployeesView = ({ selectedBusiness }: EmployeesViewProps) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [showCostTracking, setShowCostTracking] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-
-  const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness.id;
+  
+  const businessId = selectedBusiness === 'All' ? undefined : (typeof selectedBusiness === 'string' ? selectedBusiness : selectedBusiness.id);
   const { data: employees = [], isLoading, error } = useEmployees(businessId);
 
-  const filteredEmployees = employees.filter(employee =>
-    employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.position?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const activeEmployees = employees.filter(emp => emp.status === 'active');
+  const totalSalaryBudget = employees.reduce((sum, emp) => sum + (emp.salary || 0), 0);
+  const totalHourlyBudget = employees.reduce((sum, emp) => sum + ((emp.hourly_rate || 0) * 40 * 4), 0); // Assuming 40 hours/week
 
-  const totalEmployees = filteredEmployees.length;
-  const activeEmployees = filteredEmployees.filter(emp => emp.status === 'active').length;
-  const totalSalary = filteredEmployees.reduce((sum, emp) => sum + (emp.salary || 0), 0);
-  const totalHourlyWages = filteredEmployees.reduce((sum, emp) => sum + (emp.hourly_rate || 0), 0);
-
-  const handleSaveEmployee = (employee: Employee) => {
-    setShowAddForm(false);
-    setSelectedEmployee(null);
-  };
-
-  const handleSaveCost = (transaction: any) => {
+  const handleCostTrackingClose = () => {
     setShowCostTracking(false);
+    setSelectedEmployee(null);
   };
 
-  const handleAddEmployee = () => {
-    if (selectedBusiness === 'All') {
-      alert('Please select a specific business to add an employee.');
-      return;
-    }
-    
+  const handleCostTrackingSave = () => {
+    setShowCostTracking(false);
     setSelectedEmployee(null);
-    setShowAddForm(true);
   };
+
+  if (selectedBusiness === 'All') {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-slate-900">Employee Management</h2>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center text-slate-500">
+              Please select a specific business to manage employees.
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (error) {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-slate-900">Employees</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-900">Employee Management</h2>
+        </div>
         <Card>
           <CardContent className="pt-6">
             <div className="text-center text-red-600">
@@ -71,18 +70,22 @@ export const EmployeesView = ({ selectedBusiness }: EmployeesViewProps) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Employees</h2>
-          <p className="text-slate-600">Manage your team and track employee costs</p>
-        </div>
+        <h2 className="text-2xl font-bold text-slate-900">Employee Management</h2>
         <div className="flex space-x-2">
-          <Button variant="outline" onClick={() => setShowCostTracking(true)}>
-            <DollarSign size={16} className="mr-2" />
-            Record Cost
+          <Button
+            onClick={() => setShowCostTracking(true)}
+            variant="outline"
+            className="flex items-center space-x-2"
+          >
+            <Calculator size={16} />
+            <span>Track Costs</span>
           </Button>
-          <Button onClick={handleAddEmployee}>
-            <Plus size={16} className="mr-2" />
-            Add Employee
+          <Button
+            onClick={() => setShowForm(true)}
+            className="flex items-center space-x-2"
+          >
+            <Plus size={16} />
+            <span>Add Employee</span>
           </Button>
         </div>
       </div>
@@ -91,51 +94,55 @@ export const EmployeesView = ({ selectedBusiness }: EmployeesViewProps) => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalEmployees}</div>
+            <div className="text-2xl font-bold">{employees.length}</div>
             <p className="text-xs text-muted-foreground">
-              Registered employees
+              {activeEmployees.length} active
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Employees</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{activeEmployees}</div>
-            <p className="text-xs text-muted-foreground">
-              Currently employed
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Salaries</CardTitle>
+            <CardTitle className="text-sm font-medium">Monthly Salary Budget</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R{totalSalary.toFixed(2)}</div>
+            <div className="text-2xl font-bold">R{totalSalaryBudget.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              Total monthly commitment
+              Fixed salaries
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Hourly Rates</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Hourly Budget</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R{totalHourlyWages.toFixed(2)}</div>
+            <div className="text-2xl font-bold">R{totalHourlyBudget.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              Combined hourly rates
+              Est. monthly (160h)
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg. Hourly Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              R{employees.length > 0 
+                ? (employees.reduce((sum, emp) => sum + (emp.hourly_rate || 0), 0) / employees.length).toFixed(0)
+                : 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Per hour average
             </p>
           </CardContent>
         </Card>
@@ -143,17 +150,10 @@ export const EmployeesView = ({ selectedBusiness }: EmployeesViewProps) => {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center space-x-4">
-            <div className="relative flex-1">
-              <Search size={16} className="absolute left-3 top-3 text-slate-400" />
-              <Input
-                placeholder="Search employees by name, email, or position..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
+          <CardTitle className="flex items-center space-x-2">
+            <Users size={20} />
+            <span>Employee Directory</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -161,110 +161,111 @@ export const EmployeesView = ({ selectedBusiness }: EmployeesViewProps) => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               <span className="ml-3 text-slate-600">Loading employees...</span>
             </div>
-          ) : filteredEmployees.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-slate-500">No employees found. Add your first employee to get started.</p>
+          ) : employees.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-200">
+                    <th className="text-left py-3 px-4 font-medium text-slate-600">Name</th>
+                    <th className="text-left py-3 px-4 font-medium text-slate-600">Position</th>
+                    <th className="text-left py-3 px-4 font-medium text-slate-600">Contact</th>
+                    <th className="text-left py-3 px-4 font-medium text-slate-600">Salary</th>
+                    <th className="text-left py-3 px-4 font-medium text-slate-600">Hourly Rate</th>
+                    <th className="text-left py-3 px-4 font-medium text-slate-600">Status</th>
+                    <th className="text-left py-3 px-4 font-medium text-slate-600">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {employees.map((employee) => (
+                    <tr key={employee.id} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-3 px-4">
+                        <div>
+                          <div className="font-medium text-slate-900">{employee.name}</div>
+                          {employee.start_date && (
+                            <div className="text-xs text-slate-500">
+                              Started: {new Date(employee.start_date).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-sm">{employee.position || 'N/A'}</td>
+                      <td className="py-3 px-4 text-sm">
+                        <div>
+                          {employee.email && <div>{employee.email}</div>}
+                          {employee.phone && <div className="text-xs text-slate-500">{employee.phone}</div>}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-sm font-medium">
+                        {employee.salary ? `R${employee.salary.toLocaleString()}` : 'N/A'}
+                      </td>
+                      <td className="py-3 px-4 text-sm font-medium">
+                        {employee.hourly_rate ? `R${employee.hourly_rate}/hr` : 'N/A'}
+                      </td>
+                      <td className="py-3 px-4 text-sm">
+                        <Badge 
+                          variant={employee.status === 'active' ? 'default' : 'secondary'}
+                          className={employee.status === 'active' ? 'bg-green-100 text-green-800' : ''}
+                        >
+                          {employee.status || 'active'}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 text-sm">
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedEmployee(employee);
+                              setShowCostTracking(true);
+                            }}
+                          >
+                            Pay
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredEmployees.map((employee) => (
-                <Card key={employee.id} className="border border-slate-200 hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{employee.name}</CardTitle>
-                      <Badge variant={employee.status === 'active' ? 'default' : 'secondary'}>
-                        {employee.status}
-                      </Badge>
-                    </div>
-                    {employee.position && (
-                      <p className="text-sm text-slate-600">{employee.position}</p>
-                    )}
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-2">
-                      {employee.email && (
-                        <div className="flex items-center space-x-2 text-sm text-slate-600">
-                          <span>Email: {employee.email}</span>
-                        </div>
-                      )}
-                      {employee.phone && (
-                        <div className="flex items-center space-x-2 text-sm text-slate-600">
-                          <span>Phone: {employee.phone}</span>
-                        </div>
-                      )}
-                      {employee.start_date && (
-                        <div className="flex items-center space-x-2 text-sm text-slate-600">
-                          <Calendar size={14} />
-                          <span>Started: {new Date(employee.start_date).toLocaleDateString()}</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="pt-3 border-t border-slate-100">
-                      <div className="space-y-2 mb-3">
-                        {employee.salary && employee.salary > 0 && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-slate-600">Monthly Salary:</span>
-                            <span className="font-medium">R{employee.salary.toFixed(2)}</span>
-                          </div>
-                        )}
-                        {employee.hourly_rate && employee.hourly_rate > 0 && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-slate-600">Hourly Rate:</span>
-                            <span className="font-medium">R{employee.hourly_rate.toFixed(2)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-600">Payment:</span>
-                          <div className="flex items-center space-x-1">
-                            <CreditCard size={14} />
-                            <span className="text-sm">{employee.payment_method?.replace('_', ' ')}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedEmployee(employee);
-                            setShowAddForm(true);
-                          }}
-                        >
-                          <Edit size={14} />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="text-center py-12">
+              <Users size={48} className="mx-auto text-slate-300 mb-4" />
+              <h3 className="text-lg font-medium text-slate-900 mb-2">No employees found</h3>
+              <p className="text-slate-500 mb-4">
+                Add your first employee to start managing your team.
+              </p>
+              <Button onClick={() => setShowForm(true)} className="flex items-center space-x-2">
+                <Plus size={16} />
+                <span>Add Your First Employee</span>
+              </Button>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {showAddForm && (
-        <EmployeeForm
-          employee={selectedEmployee}
-          businessId={selectedBusiness === 'All' ? '' : selectedBusiness.id}
-          onClose={() => {
-            setShowAddForm(false);
-            setSelectedEmployee(null);
-          }}
-          onSave={handleSaveEmployee}
-        />
+      {showForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <EmployeeForm 
+              onClose={() => setShowForm(false)} 
+              defaultBusiness={businessId}
+            />
+          </div>
+        </div>
       )}
 
       {showCostTracking && (
-        <CostTrackingForm
-          employees={employees}
-          onClose={() => setShowCostTracking(false)}
-          onSave={handleSaveCost}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <CostTrackingForm 
+              businessId={businessId!}
+              selectedEmployee={selectedEmployee}
+              onClose={handleCostTrackingClose}
+              onSave={handleCostTrackingSave}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
