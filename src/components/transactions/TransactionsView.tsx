@@ -6,11 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { TransactionForm } from './TransactionForm';
 import { TransactionDetailsModal } from './TransactionDetailsModal';
 import { InvoiceGenerationModal } from './InvoiceGenerationModal';
+import { InvoiceViewModal } from './InvoiceViewModal';
 import { CSVUpload } from './CSVUpload';
 import { YocoCSVUpload } from './YocoCSVUpload';
 import { useTransactions } from '@/hooks/useSupabaseData';
 import { useCreateTransaction } from '@/hooks/useCreateTransaction';
-import { Plus, Upload, CreditCard, FileText, Eye, Receipt, Package, User } from 'lucide-react';
+import { Plus, Upload, CreditCard, FileText, Eye, Receipt, Package, User, Download } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import type { BusinessWithAll, Transaction } from '@/types/database';
 
@@ -24,6 +25,7 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
   const [showYocoUpload, setShowYocoUpload] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showInvoiceViewModal, setShowInvoiceViewModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   
   const businessId = selectedBusiness === 'All' ? undefined : (typeof selectedBusiness === 'string' ? selectedBusiness : selectedBusiness.id);
@@ -54,6 +56,11 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
     setShowDetailsModal(true);
   };
 
+  const handleViewInvoice = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setShowInvoiceViewModal(true);
+  };
+
   const handleInvoiceGenerated = (invoiceData: any) => {
     console.log('Invoice generated:', invoiceData);
     setShowInvoiceModal(false);
@@ -64,7 +71,6 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
     console.log('Transaction updated:', updatedTransaction);
     setShowDetailsModal(false);
     setSelectedTransaction(null);
-    // In a real app, you would update the transaction in the list
   };
 
   const getStatusColor = (status: string) => {
@@ -217,6 +223,16 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
         />
       )}
 
+      {showInvoiceViewModal && selectedTransaction && (
+        <InvoiceViewModal
+          transaction={selectedTransaction}
+          onClose={() => {
+            setShowInvoiceViewModal(false);
+            setSelectedTransaction(null);
+          }}
+        />
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
@@ -310,7 +326,15 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
                           >
                             <Eye size={14} />
                           </Button>
-                          {transaction.type === 'sale' && !transaction.invoice_generated && (
+                          {transaction.invoice_generated ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewInvoice(transaction)}
+                            >
+                              <Download size={14} />
+                            </Button>
+                          ) : transaction.type === 'sale' ? (
                             <Button
                               variant="outline"
                               size="sm"
@@ -318,7 +342,7 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
                             >
                               <FileText size={14} />
                             </Button>
-                          )}
+                          ) : null}
                         </div>
                       </td>
                     </tr>

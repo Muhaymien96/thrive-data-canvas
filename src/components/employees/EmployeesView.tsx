@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Edit, Trash2, User, DollarSign, Calendar, CreditCard } from 'lucide-react';
 import { EmployeeForm } from './EmployeeForm';
 import { CostTrackingForm } from './CostTrackingForm';
-import { useEmployees } from '@/hooks/useSupabaseData';
+import { useEmployees } from '@/hooks/useEmployees';
 import type { BusinessWithAll, Employee } from '@/types/database';
 
 interface EmployeesViewProps {
@@ -49,29 +49,7 @@ export const EmployeesView = ({ selectedBusiness }: EmployeesViewProps) => {
       return;
     }
     
-    // Create a new employee with the selected business ID
-    const newEmployee: Partial<Employee> = {
-      id: 'new',
-      name: '',
-      email: '',
-      phone: '',
-      business_id: selectedBusiness.id,
-      position: '',
-      hourly_rate: 0,
-      salary: 0,
-      start_date: new Date().toISOString().split('T')[0],
-      status: 'active',
-      payment_method: 'bank_transfer',
-      bank_details: {
-        accountNumber: '',
-        bankName: '',
-        branchCode: ''
-      },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    
-    setSelectedEmployee(newEmployee as Employee);
+    setSelectedEmployee(null);
     setShowAddForm(true);
   };
 
@@ -272,6 +250,7 @@ export const EmployeesView = ({ selectedBusiness }: EmployeesViewProps) => {
       {showAddForm && (
         <EmployeeForm
           employee={selectedEmployee}
+          businessId={selectedBusiness === 'All' ? '' : selectedBusiness.id}
           onClose={() => {
             setShowAddForm(false);
             setSelectedEmployee(null);

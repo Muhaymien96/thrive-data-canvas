@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useCreateTransaction } from '@/hooks/useCreateTransaction';
+import { useUpdateTransaction } from '@/hooks/useUpdateTransaction';
 import { toast } from '@/hooks/use-toast';
 import { Calendar, User, Package, CreditCard, FileText, DollarSign } from 'lucide-react';
 import type { Transaction } from '@/types/database';
@@ -19,8 +19,7 @@ interface TransactionDetailsModalProps {
 
 export const TransactionDetailsModal = ({ transaction, onClose, onTransactionUpdated }: TransactionDetailsModalProps) => {
   const [paymentStatus, setPaymentStatus] = useState(transaction.payment_status || 'pending');
-  const [isUpdating, setIsUpdating] = useState(false);
-  const updateTransaction = useCreateTransaction();
+  const updateTransaction = useUpdateTransaction();
 
   const handleStatusUpdate = async () => {
     if (paymentStatus === transaction.payment_status) {
@@ -31,19 +30,13 @@ export const TransactionDetailsModal = ({ transaction, onClose, onTransactionUpd
       return;
     }
 
-    setIsUpdating(true);
     try {
-      // Since we don't have an update mutation, we'll use the create mutation approach
-      // In a real app, you'd want a proper update mutation
-      const updatedData = {
-        ...transaction,
+      const updatedTransaction = await updateTransaction.mutateAsync({
+        id: transaction.id,
         payment_status: paymentStatus,
-        updated_at: new Date().toISOString()
-      };
-
-      // Here you would typically call an update mutation
-      // For now, we'll just show success and call the callback
-      onTransactionUpdated?.(updatedData as Transaction);
+      });
+      
+      onTransactionUpdated?.(updatedTransaction);
       
       toast({
         title: "Status Updated",
@@ -56,8 +49,6 @@ export const TransactionDetailsModal = ({ transaction, onClose, onTransactionUpd
         description: "Failed to update transaction status",
         variant: "destructive",
       });
-    } finally {
-      setIsUpdating(false);
     }
   };
 
@@ -106,7 +97,6 @@ export const TransactionDetailsModal = ({ transaction, onClose, onTransactionUpd
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Header Info */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Badge variant={getTransactionTypeColor(transaction.type)} className="text-sm">
@@ -123,7 +113,6 @@ export const TransactionDetailsModal = ({ transaction, onClose, onTransactionUpd
 
           <Separator />
 
-          {/* Transaction Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="flex items-center gap-2">
@@ -198,7 +187,6 @@ export const TransactionDetailsModal = ({ transaction, onClose, onTransactionUpd
             </div>
           </div>
 
-          {/* Description */}
           {transaction.description && (
             <div>
               <Label className="text-sm font-medium">Description</Label>
@@ -208,7 +196,6 @@ export const TransactionDetailsModal = ({ transaction, onClose, onTransactionUpd
             </div>
           )}
 
-          {/* Status Update Section */}
           {transaction.payment_status !== 'paid' && (
             <>
               <Separator />
@@ -228,17 +215,16 @@ export const TransactionDetailsModal = ({ transaction, onClose, onTransactionUpd
                   </Select>
                   <Button 
                     onClick={handleStatusUpdate} 
-                    disabled={isUpdating || paymentStatus === transaction.payment_status}
+                    disabled={updateTransaction.isPending || paymentStatus === transaction.payment_status}
                     size="sm"
                   >
-                    {isUpdating ? 'Updating...' : 'Update Status'}
+                    {updateTransaction.isPending ? 'Updating...' : 'Update Status'}
                   </Button>
                 </div>
               </div>
             </>
           )}
 
-          {/* Action Buttons */}
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={onClose}>
               Close

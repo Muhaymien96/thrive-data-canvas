@@ -14,16 +14,16 @@ interface BankDetails {
   accountNumber: string;
   bankName: string;
   branchCode: string;
-  [key: string]: any; // Make it compatible with Json type
+  [key: string]: any;
 }
 
 interface EmployeeFormProps {
   employee?: Employee | null;
+  businessId: string;
   onClose: () => void;
   onSave: (employee: Employee) => void;
 }
 
-// Helper function to safely convert database Json to BankDetails
 const convertToBankDetails = (bankDetails: any): BankDetails => {
   if (!bankDetails || typeof bankDetails !== 'object') {
     return {
@@ -40,12 +40,12 @@ const convertToBankDetails = (bankDetails: any): BankDetails => {
   };
 };
 
-export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) => {
+export const EmployeeForm = ({ employee, businessId, onClose, onSave }: EmployeeFormProps) => {
   const [formData, setFormData] = useState<Partial<Employee>>({
     name: employee?.name || '',
     email: employee?.email || '',
     phone: employee?.phone || '',
-    business_id: employee?.business_id || '',
+    business_id: employee?.business_id || businessId,
     position: employee?.position || '',
     hourly_rate: employee?.hourly_rate || 0,
     salary: employee?.salary || 0,
@@ -68,7 +68,7 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
       return false;
     }
 
-    if (!formData.business_id?.trim()) {
+    if (!businessId?.trim()) {
       toast({
         title: "Validation Error",
         description: "Business ID is required",
@@ -97,12 +97,11 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
     }
 
     try {
-      // Ensure required fields are present
       const employeeData = {
         name: formData.name!.trim(),
         email: formData.email?.trim() || null,
         phone: formData.phone?.trim() || null,
-        business_id: formData.business_id!.trim(),
+        business_id: businessId,
         position: formData.position?.trim() || null,
         hourly_rate: formData.hourly_rate || null,
         salary: formData.salary || null,
