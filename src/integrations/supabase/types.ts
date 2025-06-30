@@ -645,6 +645,7 @@ export type Database = {
           cash_received: number | null
           cost_type: string | null
           created_at: string
+          customer_id: string | null
           customer_name: string | null
           date: string
           description: string | null
@@ -659,6 +660,7 @@ export type Database = {
           invoice_number: string | null
           payment_method: string | null
           payment_status: string | null
+          supplier_id: string | null
           type: string
           updated_at: string
           yoco_card_type: string | null
@@ -675,6 +677,7 @@ export type Database = {
           cash_received?: number | null
           cost_type?: string | null
           created_at?: string
+          customer_id?: string | null
           customer_name?: string | null
           date: string
           description?: string | null
@@ -689,6 +692,7 @@ export type Database = {
           invoice_number?: string | null
           payment_method?: string | null
           payment_status?: string | null
+          supplier_id?: string | null
           type: string
           updated_at?: string
           yoco_card_type?: string | null
@@ -705,6 +709,7 @@ export type Database = {
           cash_received?: number | null
           cost_type?: string | null
           created_at?: string
+          customer_id?: string | null
           customer_name?: string | null
           date?: string
           description?: string | null
@@ -719,6 +724,7 @@ export type Database = {
           invoice_number?: string | null
           payment_method?: string | null
           payment_status?: string | null
+          supplier_id?: string | null
           type?: string
           updated_at?: string
           yoco_card_type?: string | null
@@ -736,10 +742,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "transactions_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]

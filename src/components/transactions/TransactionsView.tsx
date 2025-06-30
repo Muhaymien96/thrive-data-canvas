@@ -72,6 +72,21 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
     }
   };
 
+  if (selectedBusiness === 'All') {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-slate-900">Transactions</h2>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center text-slate-500">
+              Please select a specific business to manage transactions.
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="space-y-6">
@@ -121,14 +136,11 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <TransactionForm 
-              onClose={() => setShowForm(false)} 
-              onSave={handleSaveTransaction}
-            />
-          </div>
-        </div>
+        <TransactionForm 
+          businessId={businessId!}
+          onClose={() => setShowForm(false)} 
+          onSave={handleSaveTransaction}
+        />
       )}
 
       {showCSVUpload && (
@@ -190,7 +202,7 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Date</th>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Type</th>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Amount</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-600">Customer</th>
+                    <th className="text-left py-3 px-4 font-medium text-slate-600">Customer/Supplier</th>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Status</th>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Invoice</th>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Actions</th>
@@ -201,13 +213,21 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
                     <tr key={transaction.id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="py-3 px-4 text-sm">{transaction.date}</td>
                       <td className="py-3 px-4 text-sm">
-                        <span className="capitalize">{transaction.type}</span>
+                        <Badge variant={transaction.type === 'sale' ? 'default' : transaction.type === 'expense' ? 'destructive' : 'secondary'}>
+                          {transaction.type}
+                        </Badge>
                       </td>
                       <td className="py-3 px-4 text-sm font-medium">
                         R{transaction.amount.toLocaleString()}
                       </td>
                       <td className="py-3 px-4 text-sm">
                         {transaction.customer_name || 'N/A'}
+                        {transaction.customer_id && (
+                          <Badge variant="outline" className="ml-2 text-xs">Linked</Badge>
+                        )}
+                        {transaction.supplier_id && (
+                          <Badge variant="outline" className="ml-2 text-xs">Linked</Badge>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-sm">
                         <Badge className={`text-xs ${getStatusColor(transaction.payment_status || 'pending')}`}>
@@ -253,10 +273,7 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
               <Receipt size={48} className="mx-auto text-slate-300 mb-4" />
               <h3 className="text-lg font-medium text-slate-900 mb-2">No transactions found</h3>
               <p className="text-slate-500 mb-4">
-                {selectedBusiness === 'All' 
-                  ? 'Start by adding your first transaction to track your business activity.'
-                  : 'No transactions found for the selected business.'
-                }
+                Start by adding your first transaction to track your business activity.
               </p>
               <Button onClick={() => setShowForm(true)} className="flex items-center space-x-2">
                 <Plus size={16} />

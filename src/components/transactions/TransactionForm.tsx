@@ -6,16 +6,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
+import { QuickAddCustomer } from './QuickAddCustomer';
+import { QuickAddSupplier } from './QuickAddSupplier';
+import { useCustomers } from '@/hooks/useCustomers';
+import { useSuppliers } from '@/hooks/useSuppliers';
 import type { Transaction } from '@/types/database';
 
 interface TransactionFormProps {
   transaction?: Transaction | null;
+  businessId: string;
   onClose: () => void;
-  onSave: (transaction: Transaction) => void;
+  onSave: (transaction: Partial<Transaction>) => void;
 }
 
-export const TransactionForm = ({ transaction, onClose, onSave }: TransactionFormProps) => {
+export const TransactionForm = ({ transaction, businessId, onClose, onSave }: TransactionFormProps) => {
   const [formData, setFormData] = useState<Partial<Transaction>>({
     type: transaction?.type || 'sale',
     amount: transaction?.amount || 0,
@@ -23,17 +28,75 @@ export const TransactionForm = ({ transaction, onClose, onSave }: TransactionFor
     description: transaction?.description || '',
     customer_name: transaction?.customer_name || '',
     payment_method: transaction?.payment_method || 'cash',
-    payment_status: transaction?.payment_status || 'pending'
+    payment_status: transaction?.payment_status || 'pending',
+    customer_id: transaction?.customer_id || null,
+    supplier_id: transaction?.supplier_id || null
   });
+
+  const [showQuickAddCustomer, setShowQuickAddCustomer] = useState(false);
+  const [showQuickAddSupplier, setShowQuickAddSupplier] = useState(false);
+
+  const { data: customers = [] } = useCustomers(businessId);
+  const { data: suppliers = [] } = useSuppliers(businessId);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData as Transaction);
+    
+    // Prepare transaction data
+    const transactionData = {
+      ...formData,
+      business_id: businessId
+    };
+
+    // Clear unused fields based on transaction type
+    if (formData.type === 'sale') {
+      transactionData.supplier_id = null;
+    } else if (formData.type === 'expense') {
+      transactionData.customer_id = null;
+    }
+
+    onSave(transactionData);
+  };
+
+  const handleCustomerCreated = (customerId: string, customerName: string) => {
+    setFormData(prev => ({
+      ...prev,
+      customer_id: customerId,
+      customer_name: customerName
+    }));
+    setShowQuickAddCustomer(false);
+  };
+
+  const handleSupplierCreated = (supplierId: string, supplierName: string) => {
+    setFormData(prev => ({
+      ...prev,
+      supplier_id: supplierId,
+      customer_name: supplierName // Using customer_name field for supplier name for backward compatibility
+    }));
+    setShowQuickAddSupplier(false);
+  };
+
+  const handleCustomerSelect = (customerId: string) => {
+    const customer = customers.find(c => c.id === customerId);
+    setFormData(prev => ({
+      ...prev,
+      customer_id: customerId,
+      customer_name: customer?.name || ''
+    }));
+  };
+
+  const handleSupplierSelect = (supplierId: string) => {
+    const supplier = suppliers.find(s => s.id === supplierId);
+    setFormData(prev => ({
+      ...prev,
+      supplier_id: supplierId,
+      customer_name: supplier?.name || '' // Using customer_name field for backward compatibility
+    }));
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-lg mx-4">
+      <Card className="w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>{transaction ? 'Edit Transaction' : 'Add New Transaction'}</CardTitle>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -46,7 +109,17 @@ export const TransactionForm = ({ transaction, onClose, onSave }: TransactionFor
               <Label htmlFor="type">Transaction Type</Label>
               <Select
                 value={formData.type}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+                onValueChange={(value) => {
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    type: value,
+                    customer_id: null,
+                    supplier_id: null,
+                    customer_name: ''
+                  }));
+                  setShowQuickAddCustomer(false);
+                  setShowQuickAddSupplier(false);
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -84,15 +157,102 @@ export const TransactionForm = ({ transaction, onClose, onSave }: TransactionFor
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="customer_name">Customer Name</Label>
-              <Input
-                id="customer_name"
-                value={formData.customer_name || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
-                placeholder="Optional"
-              />
-            </div>
+            {/* Customer Selection for Sales */}
+            {formData.type === 'sale' && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Customer</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowQuickAddCustomer(!showQuickAddCustomer)}
+                  >
+                    <Plus size={14} className="mr-1" />
+                    Add New
+                  </Button>
+                </div>
+                <Select
+                  value={formData.customer_id || ''}
+                  onValueChange={handleCustomerSelect}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select customer or add new" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.map((customer) => (
+                      <SelectItem key={customer.id} value={customer.id}>
+                        {customer.name} {customer.email && `(${customer.email})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {showQuickAddCustomer && (
+                  <QuickAddCustomer
+                    businessId={businessId}
+                    onCustomerCreated={handleCustomerCreated}
+                    onCancel={() => setShowQuickAddCustomer(false)}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Supplier Selection for Expenses */}
+            {formData.type === 'expense' && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Supplier</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowQuickAddSupplier(!showQuickAddSupplier)}
+                  >
+                    <Plus size={14} className="mr-1" />
+                    Add New
+                  </Button>
+                </div>
+                <Select
+                  value={formData.supplier_id || ''}
+                  onValueChange={handleSupplierSelect}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select supplier or add new" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suppliers.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>
+                        {supplier.name} {supplier.category && `(${supplier.category})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {showQuickAddSupplier && (
+                  <QuickAddSupplier
+                    businessId={businessId}
+                    onSupplierCreated={handleSupplierCreated}
+                    onCancel={() => setShowQuickAddSupplier(false)}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Generic Customer Name for Refunds or Manual Entry */}
+            {(formData.type === 'refund' || (!formData.customer_id && !formData.supplier_id)) && (
+              <div>
+                <Label htmlFor="customer_name">
+                  {formData.type === 'expense' ? 'Supplier Name' : 'Customer Name'}
+                </Label>
+                <Input
+                  id="customer_name"
+                  value={formData.customer_name || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
+                  placeholder="Optional - for manual entry"
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>

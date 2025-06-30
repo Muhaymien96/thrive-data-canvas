@@ -1,10 +1,34 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import type { Transaction, TransactionInsert } from '@/types/database';
+import type { Transaction } from '@/types/database';
 
 export const useTransactions = (businessId?: string) => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('transactions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'transactions'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['transactions', businessId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, businessId]);
+
   return useQuery({
     queryKey: ['transactions', businessId],
     queryFn: async () => {
@@ -13,7 +37,11 @@ export const useTransactions = (businessId?: string) => {
 
       let query = supabase
         .from('transactions')
-        .select('*')
+        .select(`
+          *,
+          customer:customers(id, name, email),
+          supplier:suppliers(id, name, category)
+        `)
         .order('date', { ascending: false });
       
       if (businessId && businessId !== 'All') {
@@ -29,7 +57,7 @@ export const useTransactions = (businessId?: string) => {
       
       return data as Transaction[];
     },
-    enabled: true,
+    enabled: !!businessId && businessId !== 'All',
   });
 };
 
@@ -37,7 +65,7 @@ export const useCreateTransaction = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (transactionData: TransactionInsert) => {
+    mutationFn: async (transactionData: Omit<Transaction, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('transactions')
         .insert([transactionData])
@@ -54,7 +82,7 @@ export const useCreateTransaction = () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
         title: "Transaction Added",
-        description: `Successfully added transaction for ${data.amount}`,
+        description: `Successfully added ${data.type} transaction of R${data.amount}`,
       });
     },
     onError: (error) => {
@@ -90,7 +118,7 @@ export const useUpdateTransaction = () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast({
         title: "Transaction Updated",
-        description: `Successfully updated transaction for ${data.amount}`,
+        description: `Successfully updated transaction`,
       });
     },
     onError: (error) => {
