@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Edit, Trash2, Building2, MapPin, Phone, Mail } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Building2 } from 'lucide-react';
 import { BusinessForm } from './BusinessForm';
 import { useBusinesses } from '@/hooks/useSupabaseData';
 import type { BusinessWithAll, Business } from '@/types/database';

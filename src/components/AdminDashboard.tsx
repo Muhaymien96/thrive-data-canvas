@@ -51,7 +51,7 @@ export const AdminDashboard = () => {
     );
   }
 
-  // Auto-select business logic
+  // Business selection logic
   React.useEffect(() => {
     if (businesses.length === 1 && selectedBusiness === 'All') {
       setSelectedBusiness(businesses[0]);
