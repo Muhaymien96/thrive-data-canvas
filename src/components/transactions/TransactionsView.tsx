@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { CSVUpload } from './CSVUpload';
 import { YocoCSVUpload } from './YocoCSVUpload';
 import { mockTransactions } from '@/lib/mockData';
 import { Plus, Upload, CreditCard } from 'lucide-react';
-import type { Business } from '@/components/AdminDashboard';
+import type { Business } from '@/types/transaction';
 
 interface TransactionsViewProps {
   selectedBusiness: Business;
@@ -58,7 +59,6 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
           <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <TransactionForm 
               onClose={() => setShowForm(false)} 
-              defaultBusiness={selectedBusiness}
             />
           </div>
         </div>

@@ -23,6 +23,7 @@ const viewTitles: Record<ViewType, string> = {
   suppliers: 'Suppliers',
   customers: 'Customers',
   products: 'Products',
+  employees: 'Employees',
   events: 'Events',
   compliance: 'Compliance',
 };

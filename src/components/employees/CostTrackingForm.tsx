@@ -18,7 +18,7 @@ interface CostTrackingFormProps {
 export const CostTrackingForm = ({ employees, onClose, onSave }: CostTrackingFormProps) => {
   const [formData, setFormData] = useState({
     employeeId: '',
-    costType: 'salary' as const,
+    costType: 'salary' as 'salary' | 'wages' | 'benefits' | 'bonus' | 'overtime',
     amount: 0,
     hoursWorked: 0,
     description: '',
@@ -96,7 +96,7 @@ export const CostTrackingForm = ({ employees, onClose, onSave }: CostTrackingFor
               <Label htmlFor="costType">Cost Type</Label>
               <Select
                 value={formData.costType}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, costType: value as any }))}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, costType: value as typeof formData.costType }))}
               >
                 <SelectTrigger>
                   <SelectValue />

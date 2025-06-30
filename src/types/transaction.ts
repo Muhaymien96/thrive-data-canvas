@@ -1,6 +1,7 @@
 
 export type PaymentMethod = 'card' | 'cash' | 'yoco' | 'bank_transfer';
 export type TransactionType = 'sale' | 'refund' | 'expense' | 'employee_cost';
+export type Business = 'Fish' | 'Honey' | 'Mushrooms';
 
 export interface Transaction {
   id: string;
@@ -34,6 +35,17 @@ export interface Transaction {
   invoiceNumber?: string;
   invoiceGenerated?: boolean;
   invoiceDate?: string;
+}
+
+export interface YocoTransaction {
+  'Transaction ID': string;
+  'Transaction Date': string;
+  'Amount': string;
+  'Processing Fee': string;
+  'Net Amount': string;
+  'Card Type': string;
+  'Settlement Date': string;
+  'Reference': string;
 }
 
 export interface Employee {
