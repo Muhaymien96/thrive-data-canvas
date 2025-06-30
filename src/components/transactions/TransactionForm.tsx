@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { QuickAddCustomer } from './QuickAddCustomer';
 import { QuickAddSupplier } from './QuickAddSupplier';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useSuppliers } from '@/hooks/useSuppliers';
+import { useProducts } from '@/hooks/useProducts';
 import type { Transaction } from '@/types/database';
 
 interface TransactionFormProps {
@@ -35,9 +36,27 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
 
   const [showQuickAddCustomer, setShowQuickAddCustomer] = useState(false);
   const [showQuickAddSupplier, setShowQuickAddSupplier] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const [quantity, setQuantity] = useState<number>(1);
 
   const { data: customers = [] } = useCustomers(businessId);
   const { data: suppliers = [] } = useSuppliers(businessId);
+  const { data: products = [] } = useProducts(businessId);
+
+  // Auto-calculate amount when product and quantity change
+  useEffect(() => {
+    if (selectedProductId && quantity > 0) {
+      const selectedProduct = products.find(p => p.id === selectedProductId);
+      if (selectedProduct) {
+        const calculatedAmount = selectedProduct.price * quantity;
+        setFormData(prev => ({
+          ...prev,
+          amount: calculatedAmount,
+          description: prev.description || `${selectedProduct.name} (${quantity} x R${selectedProduct.price})`
+        }));
+      }
+    }
+  }, [selectedProductId, quantity, products]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +72,17 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
       transactionData.supplier_id = null;
     } else if (formData.type === 'expense') {
       transactionData.customer_id = null;
+    }
+
+    // Add product information to description if a product was selected
+    if (selectedProductId && quantity > 0) {
+      const selectedProduct = products.find(p => p.id === selectedProductId);
+      if (selectedProduct) {
+        const productInfo = `Product: ${selectedProduct.name}, Quantity: ${quantity}, Unit Price: R${selectedProduct.price}`;
+        transactionData.description = transactionData.description 
+          ? `${transactionData.description} | ${productInfo}`
+          : productInfo;
+      }
     }
 
     onSave(transactionData);
@@ -94,6 +124,18 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     }));
   };
 
+  const handleProductSelect = (productId: string) => {
+    setSelectedProductId(productId);
+    if (!productId) {
+      // Clear amount and description if no product selected
+      setFormData(prev => ({
+        ...prev,
+        amount: 0,
+        description: ''
+      }));
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <Card className="w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
@@ -119,6 +161,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                   }));
                   setShowQuickAddCustomer(false);
                   setShowQuickAddSupplier(false);
+                  setSelectedProductId('');
                 }}
               >
                 <SelectTrigger>
@@ -131,6 +174,44 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Product Selection (Optional) */}
+            {formData.type === 'sale' && (
+              <div>
+                <Label htmlFor="product">Product (Optional)</Label>
+                <Select
+                  value={selectedProductId}
+                  onValueChange={handleProductSelect}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a product (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No product selected</SelectItem>
+                    {products.map((product) => (
+                      <SelectItem key={product.id} value={product.id}>
+                        {product.name} - R{product.price}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Quantity field - only show if product is selected */}
+            {selectedProductId && (
+              <div>
+                <Label htmlFor="quantity">Quantity</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  value={quantity}
+                  onChange={(e) => setQuantity(Number(e.target.value))}
+                  min="1"
+                  step="1"
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -267,8 +348,9 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="overdue">Overdue</SelectItem>
+                    <SelectItem value="partial">Partial</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

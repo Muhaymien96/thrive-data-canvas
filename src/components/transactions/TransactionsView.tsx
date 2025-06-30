@@ -9,7 +9,7 @@ import { YocoCSVUpload } from './YocoCSVUpload';
 import { InvoiceFromTransactionModal } from './InvoiceFromTransactionModal';
 import { useTransactions } from '@/hooks/useSupabaseData';
 import { useCreateTransaction } from '@/hooks/useCreateTransaction';
-import { Plus, Upload, CreditCard, FileText, Eye, Receipt } from 'lucide-react';
+import { Plus, Upload, CreditCard, FileText, Eye, Receipt, Package } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import type { BusinessWithAll, Transaction } from '@/types/database';
 
@@ -68,6 +68,10 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
       default:
         return 'bg-slate-100 text-slate-800';
     }
+  };
+
+  const hasProductInfo = (description: string) => {
+    return description && description.includes('Product:');
   };
 
   if (selectedBusiness === 'All') {
@@ -201,6 +205,7 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Type</th>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Amount</th>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Customer/Supplier</th>
+                    <th className="text-left py-3 px-4 font-medium text-slate-600">Product</th>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Status</th>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Invoice</th>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Actions</th>
@@ -225,6 +230,16 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
                         )}
                         {transaction.supplier_id && (
                           <Badge variant="outline" className="ml-2 text-xs">Linked</Badge>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-sm">
+                        {hasProductInfo(transaction.description || '') ? (
+                          <div className="flex items-center">
+                            <Package size={14} className="mr-1 text-blue-600" />
+                            <Badge variant="outline" className="text-xs">Product Sale</Badge>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-xs">Ad-hoc</span>
                         )}
                       </td>
                       <td className="py-3 px-4 text-sm">
