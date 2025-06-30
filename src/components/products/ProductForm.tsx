@@ -117,14 +117,16 @@ export const ProductForm = ({ onClose, defaultBusiness }: ProductFormProps) => {
                 </SelectTrigger>
                 <SelectContent>
                   {suppliersLoading ? (
-                    <SelectItem value="" disabled>Loading suppliers...</SelectItem>
-                  ) : (
+                    <SelectItem value="loading" disabled>Loading suppliers...</SelectItem>
+                  ) : suppliers.length > 0 ? (
                     suppliers.map((supplier) => (
                       <SelectItem key={supplier.id} value={supplier.id}>
                         {supplier.name}
                         {supplier.name === 'Self-Produced' && ' (Own Production)'}
                       </SelectItem>
                     ))
+                  ) : (
+                    <SelectItem value="no-suppliers" disabled>No suppliers available</SelectItem>
                   )}
                 </SelectContent>
               </Select>
