@@ -46,7 +46,7 @@ export const SupplierForm = ({ supplier, businessId, onClose }: SupplierFormProp
       const supplierData = {
         ...formData,
         payment_details: Object.keys(paymentDetails).some(key => paymentDetails[key as keyof SupplierPaymentDetails]) 
-          ? paymentDetails 
+          ? paymentDetails as any // Cast to any to satisfy Json type
           : null
       };
 

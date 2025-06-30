@@ -21,13 +21,14 @@ export type ProductInsert = Database['public']['Tables']['products']['Insert'];
 export type EmployeeInsert = Database['public']['Tables']['employees']['Insert'];
 export type SupplierInsert = Database['public']['Tables']['suppliers']['Insert'];
 
-// Extended supplier payment details type
+// Extended supplier payment details type compatible with Supabase Json
 export interface SupplierPaymentDetails {
   bank_name?: string;
   account_number?: string;
   account_holder?: string;
   swift_code?: string;
   reference?: string;
+  [key: string]: any; // Make it compatible with Json type
 }
 
 // New database types
