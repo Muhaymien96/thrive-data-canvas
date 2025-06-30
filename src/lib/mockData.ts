@@ -12,7 +12,9 @@ import type {
   ComplianceData,
   ComplianceDocument,
   ComplianceRequirement,
-  ComplianceDeadline
+  ComplianceDeadline,
+  Product,
+  StockMovement
 } from '@/types/transaction';
 
 // Generate mock transactions
@@ -241,7 +243,7 @@ export const mockEvents: Event[] = [
 ];
 
 // Generate mock products
-export const mockProducts = [
+export const mockProducts: Product[] = [
   {
     id: '1',
     name: 'Fresh Salmon',
@@ -250,11 +252,15 @@ export const mockProducts = [
     price: 120,
     cost: 80,
     stock: 25,
+    currentStock: 25,
     unit: 'kg',
     description: 'Fresh Atlantic salmon fillets',
     supplier: 'Ocean Fresh Seafood',
     minStock: 10,
-    maxStock: 50
+    minStockLevel: 10,
+    maxStock: 50,
+    markupPercentage: 50,
+    expiryDate: '2024-12-25'
   },
   {
     id: '2',
@@ -264,11 +270,14 @@ export const mockProducts = [
     price: 45,
     cost: 25,
     stock: 120,
+    currentStock: 120,
     unit: 'jar',
     description: 'Pure raw honey 500g jar',
     supplier: 'Golden Hive Apiaries',
     minStock: 20,
-    maxStock: 200
+    minStockLevel: 20,
+    maxStock: 200,
+    markupPercentage: 80
   },
   {
     id: '3',
@@ -278,11 +287,48 @@ export const mockProducts = [
     price: 35,
     cost: 18,
     stock: 45,
+    currentStock: 45,
     unit: 'kg',
     description: 'Fresh shiitake mushrooms',
     supplier: 'Mushroom Farms Ltd',
     minStock: 15,
-    maxStock: 100
+    minStockLevel: 15,
+    maxStock: 100,
+    markupPercentage: 94.4
+  }
+];
+
+// Generate mock stock movements
+export const mockStockMovements: StockMovement[] = [
+  {
+    id: '1',
+    productId: '1',
+    productName: 'Fresh Salmon',
+    type: 'in',
+    quantity: 50,
+    date: '2024-12-15',
+    reason: 'Purchase order',
+    reference: 'PO-001'
+  },
+  {
+    id: '2',
+    productId: '1',
+    productName: 'Fresh Salmon',
+    type: 'out',
+    quantity: 25,
+    date: '2024-12-20',
+    reason: 'Sale to Ocean Restaurant',
+    reference: 'INV-2024-001'
+  },
+  {
+    id: '3',
+    productId: '2',
+    productName: 'Raw Honey',
+    type: 'in',
+    quantity: 100,
+    date: '2024-12-10',
+    reason: 'Production batch',
+    reference: 'PROD-001'
   }
 ];
 
@@ -314,6 +360,23 @@ export const mockInvoices: Invoice[] = [
     transactionId: '1'
   }
 ];
+
+// Helper functions for product calculations
+export const calculateMarkup = (cost: number, price: number): number => {
+  return ((price - cost) / cost) * 100;
+};
+
+export const calculateSellingPrice = (cost: number, markupPercentage: number): number => {
+  return cost * (1 + markupPercentage / 100);
+};
+
+// Helper function to get stock movements
+export const getStockMovements = (productId?: string): StockMovement[] => {
+  if (productId) {
+    return mockStockMovements.filter(movement => movement.productId === productId);
+  }
+  return mockStockMovements;
+};
 
 // Business metrics calculation
 export const getBusinessMetrics = (business: Business) => {
@@ -464,12 +527,12 @@ export const getCustomerByName = (name: string): Customer | undefined => {
 };
 
 // Helper function to get product by ID
-export const getProductById = (id: string) => {
+export const getProductById = (id: string): Product | undefined => {
   return mockProducts.find(product => product.id === id);
 };
 
 // Helper function to get all products by business
-export const getProductsByBusiness = (business: BusinessWithAll) => {
+export const getProductsByBusiness = (business: BusinessWithAll): Product[] => {
   if (business === 'All') {
     return mockProducts;
   }

@@ -1,6 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { mockTransactions, mockSuppliers, mockCustomers, getMonthlyRevenue, getBusinessMetrics } from '@/lib/mockData';
+import type { Business, BusinessWithAll } from '@/types/transaction';
 
 // Simulate API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -38,7 +39,7 @@ export const useCustomers = () => {
   });
 };
 
-export const useBusinessMetrics = (business: string) => {
+export const useBusinessMetrics = (business: Business) => {
   return useQuery({
     queryKey: ['business-metrics', business],
     queryFn: async () => {
@@ -48,7 +49,7 @@ export const useBusinessMetrics = (business: string) => {
   });
 };
 
-export const useDashboardData = (selectedBusiness: string) => {
+export const useDashboardData = (selectedBusiness: BusinessWithAll) => {
   return useQuery({
     queryKey: ['dashboard', selectedBusiness],
     queryFn: async () => {

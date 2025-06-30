@@ -130,6 +130,36 @@ export interface Supplier {
   lastOrder: string;
 }
 
+export interface Product {
+  id: string;
+  name: string;
+  business: string;
+  category: string;
+  price: number;
+  cost: number;
+  stock: number;
+  currentStock: number;
+  unit: string;
+  description: string;
+  supplier: string;
+  minStock: number;
+  minStockLevel: number;
+  maxStock: number;
+  markupPercentage: number;
+  expiryDate?: string;
+}
+
+export interface StockMovement {
+  id: string;
+  productId: string;
+  productName: string;
+  type: 'in' | 'out' | 'adjustment';
+  quantity: number;
+  date: string;
+  reason: string;
+  reference?: string;
+}
+
 export interface Event {
   id: string;
   title: string;
