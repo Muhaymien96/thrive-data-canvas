@@ -38,7 +38,7 @@ export interface Transaction {
   invoiceDate?: string;
   
   // Payment tracking fields
-  paymentStatus?: 'paid' | 'pending' | 'overdue';
+  paymentStatus?: 'paid' | 'pending' | 'overdue' | 'partial';
   dueDate?: string;
   amountPaid?: number;
 }
@@ -128,4 +128,59 @@ export interface Supplier {
   totalSpent: number;
   rating: number;
   lastOrder: string;
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  name: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  business: Business;
+  type: 'meeting' | 'delivery' | 'inspection' | 'maintenance' | 'market';
+  status: 'upcoming' | 'completed' | 'cancelled';
+  totalRevenue: number;
+  marketCost: number;
+}
+
+export interface ComplianceDocument {
+  id: string;
+  name: string;
+  documentName: string;
+  category: string;
+  type: 'inspection' | 'license' | 'certificate' | 'permit';
+  business: Business;
+  issueDate: string;
+  expiryDate: string;
+  dueDate: string;
+  status: 'valid' | 'expiring' | 'expired' | 'completed' | 'pending' | 'overdue';
+  authority: string;
+}
+
+export interface ComplianceRequirement {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  status: 'completed' | 'pending' | 'overdue';
+}
+
+export interface ComplianceDeadline {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  daysLeft: number;
+}
+
+export interface ComplianceData {
+  documents: ComplianceDocument[];
+  requirements: ComplianceRequirement[];
+  upcomingDeadlines: ComplianceDeadline[];
+  completed: number;
+  pending: number;
+  overdue: number;
+  overallProgress: number;
 }
