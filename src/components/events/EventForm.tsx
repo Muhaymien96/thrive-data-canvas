@@ -35,7 +35,7 @@ export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormP
   });
 
   const createEvent = useCreateEvent();
-  const { data: businesses = [], isLoading: businessesLoading } = useBusinessData();
+  const { businesses, isLoading: businessesLoading } = useBusinessData();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

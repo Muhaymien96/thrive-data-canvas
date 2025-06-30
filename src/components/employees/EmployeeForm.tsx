@@ -22,6 +22,23 @@ interface EmployeeFormProps {
   onSave: (employee: Employee) => void;
 }
 
+// Helper function to safely convert database Json to BankDetails
+const convertToBankDetails = (bankDetails: any): BankDetails => {
+  if (!bankDetails || typeof bankDetails !== 'object') {
+    return {
+      accountNumber: '',
+      bankName: '',
+      branchCode: ''
+    };
+  }
+  
+  return {
+    accountNumber: bankDetails.accountNumber || '',
+    bankName: bankDetails.bankName || '',
+    branchCode: bankDetails.branchCode || ''
+  };
+};
+
 export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) => {
   const [formData, setFormData] = useState<Partial<Employee>>({
     name: employee?.name || '',
@@ -34,11 +51,7 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
     start_date: employee?.start_date || new Date().toISOString().split('T')[0],
     status: employee?.status || 'active',
     payment_method: employee?.payment_method || 'bank_transfer',
-    bank_details: employee?.bank_details || {
-      accountNumber: '',
-      bankName: '',
-      branchCode: ''
-    }
+    bank_details: convertToBankDetails(employee?.bank_details)
   });
 
   const createEmployeeMutation = useCreateEmployee();
@@ -83,40 +96,28 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
     }
 
     try {
+      const employeeData = {
+        name: formData.name!.trim(),
+        email: formData.email?.trim() || null,
+        phone: formData.phone?.trim() || null,
+        business_id: formData.business_id!.trim(),
+        position: formData.position?.trim() || null,
+        hourly_rate: formData.hourly_rate || null,
+        salary: formData.salary || null,
+        start_date: formData.start_date || null,
+        status: formData.status || 'active',
+        payment_method: formData.payment_method || 'bank_transfer',
+        bank_details: formData.bank_details || null
+      };
+
       if (employee) {
-        // Update existing employee
         const updatedEmployee = await updateEmployeeMutation.mutateAsync({
           id: employee.id,
-          name: formData.name!,
-          email: formData.email,
-          phone: formData.phone,
-          business_id: formData.business_id!,
-          position: formData.position,
-          hourly_rate: formData.hourly_rate,
-          salary: formData.salary,
-          start_date: formData.start_date,
-          status: formData.status,
-          payment_method: formData.payment_method,
-          bank_details: formData.bank_details
+          ...employeeData
         });
         onSave(updatedEmployee);
       } else {
-        // Create new employee
-        const employeeData: EmployeeInsert = {
-          name: formData.name!,
-          email: formData.email,
-          phone: formData.phone,
-          business_id: formData.business_id!,
-          position: formData.position,
-          hourly_rate: formData.hourly_rate,
-          salary: formData.salary,
-          start_date: formData.start_date,
-          status: formData.status,
-          payment_method: formData.payment_method,
-          bank_details: formData.bank_details
-        };
-        
-        const newEmployee = await createEmployeeMutation.mutateAsync(employeeData);
+        const newEmployee = await createEmployeeMutation.mutateAsync(employeeData as EmployeeInsert);
         onSave(newEmployee);
       }
       onClose();
@@ -131,6 +132,19 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
   };
 
   const isLoading = createEmployeeMutation.isPending || updateEmployeeMutation.isPending;
+
+  const updateBankDetails = (field: keyof BankDetails, value: string) => {
+    const currentBankDetails = convertToBankDetails(formData.bank_details);
+    setFormData(prev => ({
+      ...prev,
+      bank_details: {
+        ...currentBankDetails,
+        [field]: value
+      }
+    }));
+  };
+
+  const currentBankDetails = convertToBankDetails(formData.bank_details);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -262,42 +276,24 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
                     <Label htmlFor="accountNumber">Account Number</Label>
                     <Input
                       id="accountNumber"
-                      value={(formData.bank_details as BankDetails)?.accountNumber || ''}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        bank_details: { 
-                          ...(prev.bank_details as BankDetails || {}), 
-                          accountNumber: e.target.value 
-                        }
-                      }))}
+                      value={currentBankDetails.accountNumber}
+                      onChange={(e) => updateBankDetails('accountNumber', e.target.value)}
                     />
                   </div>
                   <div>
                     <Label htmlFor="bankName">Bank Name</Label>
                     <Input
                       id="bankName"
-                      value={(formData.bank_details as BankDetails)?.bankName || ''}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        bank_details: { 
-                          ...(prev.bank_details as BankDetails || {}), 
-                          bankName: e.target.value 
-                        }
-                      }))}
+                      value={currentBankDetails.bankName}
+                      onChange={(e) => updateBankDetails('bankName', e.target.value)}
                     />
                   </div>
                   <div>
                     <Label htmlFor="branchCode">Branch Code</Label>
                     <Input
                       id="branchCode"
-                      value={(formData.bank_details as BankDetails)?.branchCode || ''}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        bank_details: { 
-                          ...(prev.bank_details as BankDetails || {}), 
-                          branchCode: e.target.value 
-                        }
-                      }))}
+                      value={currentBankDetails.branchCode}
+                      onChange={(e) => updateBankDetails('branchCode', e.target.value)}
                     />
                   </div>
                 </div>
