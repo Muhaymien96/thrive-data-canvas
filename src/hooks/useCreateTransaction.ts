@@ -2,16 +2,25 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import type { Transaction } from '@/types/database';
+import type { TransactionInsert } from '@/types/database';
 
 export const useCreateTransaction = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (transactionData: Partial<Transaction>) => {
+    mutationFn: async (transactionData: TransactionInsert) => {
+      // Ensure required fields are present
+      const completeTransactionData = {
+        ...transactionData,
+        amount: transactionData.amount || 0,
+        date: transactionData.date || new Date().toISOString().split('T')[0],
+        type: transactionData.type || 'sale',
+        business_id: transactionData.business_id
+      };
+
       const { data, error } = await supabase
         .from('transactions')
-        .insert([transactionData])
+        .insert(completeTransactionData)
         .select()
         .single();
       

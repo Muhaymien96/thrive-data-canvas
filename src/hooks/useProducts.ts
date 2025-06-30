@@ -84,9 +84,12 @@ export const useCreateProduct = () => {
   
   return useMutation({
     mutationFn: async (productData: ProductInsert & { supplier_id: string } & ProductVariantData) => {
+      // Remove the type field as it doesn't exist in the database
+      const { type, ...dataWithoutType } = productData as any;
+      
       const { data, error } = await supabase
         .from('products')
-        .insert([productData])
+        .insert([dataWithoutType])
         .select(`
           *,
           supplier:suppliers(*)

@@ -60,8 +60,7 @@ export const useProductSubmission = (onClose: () => void) => {
           variant_type: null,
           variant_value: null,
           is_bulk_item: false,
-          conversion_factor: 1,
-          type: productType
+          conversion_factor: 1
         };
 
         console.log('Creating parent product:', parentProductData);
@@ -90,8 +89,7 @@ export const useProductSubmission = (onClose: () => void) => {
             variant_type: variant.variant_type,
             variant_value: variant.variant_value,
             is_bulk_item: false,
-            conversion_factor: parseFloat(variant.conversionFactor) || 1,
-            type: 'variant' as ProductType
+            conversion_factor: parseFloat(variant.conversionFactor) || 1
           };
 
           console.log('Creating variant product:', variantProductData);
@@ -125,8 +123,7 @@ export const useProductSubmission = (onClose: () => void) => {
           variant_type: null,
           variant_value: null,
           is_bulk_item: productType === 'bulk',
-          conversion_factor: 1,
-          type: productType
+          conversion_factor: 1
         };
 
         console.log('Creating product with data:', productData);
