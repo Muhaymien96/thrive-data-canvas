@@ -54,7 +54,6 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
   const { data: products = [] } = useProducts(businessId);
   const { data: employees = [] } = useEmployees(businessId);
 
-  // Auto-calculate amount when product and quantity change
   useEffect(() => {
     if (selectedProductId && selectedProductId !== 'none' && quantity > 0) {
       const selectedProduct = products.find(p => p.id === selectedProductId);
@@ -69,7 +68,6 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     }
   }, [selectedProductId, quantity, products]);
 
-  // Auto-calculate amount for salary transactions
   useEffect(() => {
     if (formData.type === 'salary' && formData.hourly_rate && formData.hours_worked) {
       const calculatedAmount = formData.hourly_rate * formData.hours_worked;
@@ -83,14 +81,12 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Prepare transaction data
     const transactionData = {
       ...formData,
       business_id: businessId,
-      invoice_generated: formData.invoice_generated === true || formData.invoice_generated === 1
+      invoice_generated: Boolean(formData.invoice_generated)
     };
 
-    // Clear unused fields based on transaction type
     if (formData.type === 'sale') {
       transactionData.supplier_id = null;
       transactionData.employee_id = null;
@@ -111,7 +107,6 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
       transactionData.hours_worked = null;
     }
 
-    // Add product information to description if a product was selected
     if (selectedProductId && selectedProductId !== 'none' && quantity > 0) {
       const selectedProduct = products.find(p => p.id === selectedProductId);
       if (selectedProduct) {
@@ -219,7 +214,6 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
               onValueChange={handleTransactionTypeChange} 
             />
 
-            {/* Product Selection for Sales */}
             {formData.type === 'sale' && (
               <ProductSelector
                 products={products}
@@ -257,7 +251,6 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
               </div>
             </div>
 
-            {/* Customer Selection for Sales */}
             {formData.type === 'sale' && (
               <CustomerSelector
                 customers={customers}
@@ -267,7 +260,6 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
               />
             )}
 
-            {/* Supplier Selection for Expenses */}
             {formData.type === 'expense' && (
               <SupplierSelector
                 suppliers={suppliers}
@@ -277,7 +269,6 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
               />
             )}
 
-            {/* Employee Selection for Salary */}
             {formData.type === 'salary' && (
               <EmployeeSelector
                 employees={employees}
@@ -290,7 +281,6 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
               />
             )}
 
-            {/* Generic Customer Name for manual entry */}
             {(formData.type === 'refund' || 
               (formData.type === 'sale' && !formData.customer_id) ||
               (formData.type === 'expense' && !formData.supplier_id) ||
@@ -339,7 +329,6 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
         </CardContent>
       </Card>
 
-      {/* Quick Add Components */}
       {showQuickAddCustomer && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60]">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
