@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -86,7 +87,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     const transactionData = {
       ...formData,
       business_id: businessId,
-      invoice_generated: Boolean(formData.invoice_generated) // Ensure it's a boolean
+      invoice_generated: formData.invoice_generated === true || formData.invoice_generated === 1
     };
 
     // Clear unused fields based on transaction type
