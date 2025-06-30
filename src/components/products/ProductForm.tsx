@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X } from 'lucide-react';
 import { useSuppliers, useCreateSupplier } from '@/hooks/useSuppliers';
 import { useCreateProduct } from '@/hooks/useProducts';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 interface ProductFormProps {
@@ -34,17 +33,19 @@ export const ProductForm = ({ onClose, defaultBusiness }: ProductFormProps) => {
   const { data: suppliers = [], isLoading: suppliersLoading, refetch: refetchSuppliers } = useSuppliers(defaultBusiness);
   const createProduct = useCreateProduct();
   const createSupplier = useCreateSupplier();
+  const selfSupplierCreated = useRef(false);
 
-  // Ensure self-supplier exists when component mounts
+  // Ensure self-supplier exists when component mounts - but only once
   useEffect(() => {
     const ensureSelfSupplier = async () => {
-      if (!defaultBusiness || !suppliers) return;
+      if (!defaultBusiness || selfSupplierCreated.current || suppliersLoading) return;
       
       console.log('Checking for self-supplier. Current suppliers:', suppliers);
       
       const selfSupplier = suppliers.find(s => s.name === 'Self-Produced');
-      if (!selfSupplier) {
+      if (!selfSupplier && suppliers.length >= 0) {
         console.log('Self-supplier not found, creating one...');
+        selfSupplierCreated.current = true;
         try {
           await createSupplier.mutateAsync({
             business_id: defaultBusiness,
@@ -58,13 +59,12 @@ export const ProductForm = ({ onClose, defaultBusiness }: ProductFormProps) => {
           refetchSuppliers();
         } catch (error) {
           console.error('Failed to create self-supplier:', error);
+          selfSupplierCreated.current = false; // Reset on error so it can retry
         }
       }
     };
 
-    if (suppliers.length >= 0 && !suppliersLoading) {
-      ensureSelfSupplier();
-    }
+    ensureSelfSupplier();
   }, [suppliers, suppliersLoading, defaultBusiness, createSupplier, refetchSuppliers]);
 
   const handleSubmit = async (e: React.FormEvent) => {
