@@ -9,10 +9,10 @@ import { CustomerDetails } from './CustomerDetails';
 import { PaymentNotifications } from '@/components/notifications/PaymentNotifications';
 import { mockCustomers, Customer, mockTransactions } from '@/lib/mockData';
 import { Search, ArrowUp, Eye } from 'lucide-react';
-import type { Business } from '@/components/AdminDashboard';
+import type { BusinessWithAll } from '@/types/transaction';
 
 interface CustomersViewProps {
-  selectedBusiness: Business;
+  selectedBusiness: BusinessWithAll;
 }
 
 export const CustomersView = ({ selectedBusiness }: CustomersViewProps) => {

@@ -2,6 +2,7 @@
 export type PaymentMethod = 'card' | 'cash' | 'yoco' | 'bank_transfer';
 export type TransactionType = 'sale' | 'refund' | 'expense' | 'employee_cost';
 export type Business = 'Fish' | 'Honey' | 'Mushrooms';
+export type BusinessWithAll = Business | 'All';
 
 export interface Transaction {
   id: string;

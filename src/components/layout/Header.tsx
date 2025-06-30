@@ -7,15 +7,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Business, ViewType } from '@/components/AdminDashboard';
+import type { Business, BusinessWithAll } from '@/types/transaction';
+import type { ViewType } from '@/components/AdminDashboard';
 
 interface HeaderProps {
-  selectedBusiness: Business | 'All';
-  onBusinessChange: (business: Business) => void;
+  selectedBusiness: BusinessWithAll;
+  onBusinessChange: (business: BusinessWithAll) => void;
   currentView: ViewType;
 }
 
-const businesses: (Business | 'All')[] = ['All', 'Fish', 'Honey', 'Mushrooms'];
+const businesses: BusinessWithAll[] = ['All', 'Fish', 'Honey', 'Mushrooms'];
 
 const viewTitles: Record<ViewType, string> = {
   dashboard: 'Dashboard',
@@ -44,7 +45,7 @@ export const Header = ({ selectedBusiness, onBusinessChange, currentView }: Head
           </label>
           <Select
             value={selectedBusiness}
-            onValueChange={(value) => onBusinessChange(value as Business)}
+            onValueChange={(value) => onBusinessChange(value as BusinessWithAll)}
           >
             <SelectTrigger id="business-select" className="w-32">
               <SelectValue />

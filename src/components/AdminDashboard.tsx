@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
@@ -13,12 +14,12 @@ import { EmployeesView } from '@/components/employees/EmployeesView';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
+import type { Business, BusinessWithAll } from '@/types/transaction';
 
-export type Business = 'Fish' | 'Honey' | 'Mushrooms' | 'All';
 export type ViewType = 'dashboard' | 'transactions' | 'suppliers' | 'customers' | 'products' | 'events' | 'compliance' | 'employees';
 
 export const AdminDashboard = () => {
-  const [selectedBusiness, setSelectedBusiness] = useState<Business>('Fish');
+  const [selectedBusiness, setSelectedBusiness] = useState<BusinessWithAll>('Fish');
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user, logout } = useAuth();
@@ -28,7 +29,7 @@ export const AdminDashboard = () => {
       case 'dashboard':
         return selectedBusiness === 'All' ? 
           <DashboardOverview selectedBusiness={selectedBusiness} /> :
-          <BusinessView business={selectedBusiness} />;
+          <BusinessView business={selectedBusiness as Business} />;
       case 'transactions':
         return <TransactionsView selectedBusiness={selectedBusiness} />;
       case 'suppliers':

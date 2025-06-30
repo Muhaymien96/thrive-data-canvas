@@ -7,10 +7,10 @@ import { CSVUpload } from './CSVUpload';
 import { YocoCSVUpload } from './YocoCSVUpload';
 import { mockTransactions } from '@/lib/mockData';
 import { Plus, Upload, CreditCard } from 'lucide-react';
-import type { Business } from '@/types/transaction';
+import type { BusinessWithAll, Transaction } from '@/types/transaction';
 
 interface TransactionsViewProps {
-  selectedBusiness: Business;
+  selectedBusiness: BusinessWithAll;
 }
 
 export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) => {
@@ -21,6 +21,12 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
   const filteredTransactions = selectedBusiness === 'All' 
     ? mockTransactions 
     : mockTransactions.filter(t => t.business === selectedBusiness);
+
+  const handleSaveTransaction = (transaction: Transaction) => {
+    console.log('Saving transaction:', transaction);
+    // TODO: Implement actual save logic with Supabase
+    setShowForm(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -59,6 +65,7 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
           <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <TransactionForm 
               onClose={() => setShowForm(false)} 
+              onSave={handleSaveTransaction}
             />
           </div>
         </div>
