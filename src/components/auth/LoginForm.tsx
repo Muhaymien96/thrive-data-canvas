@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -21,9 +21,14 @@ export const LoginForm = () => {
     e.preventDefault();
     setError('');
     
+    if (!email || !password) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+    
     const success = await login(email, password);
     if (!success) {
-      setError('Invalid credentials. Please check your email and password.');
+      setError('Please check the error notification above.');
     }
   };
 
@@ -37,32 +42,47 @@ export const LoginForm = () => {
       return;
     }
     
+    if (!email || !password) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+    
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+    
     const result = await signUp(email, password, fullName);
-    if (!result.success) {
-      setError(result.error || 'An error occurred during signup');
-    } else {
+    if (result.success) {
       setMessage('Check your email for a confirmation link!');
       setActiveTab('login');
+      // Clear form
+      setEmail('');
+      setPassword('');
+      setFullName('');
+    } else {
+      setError('Please check the error notification above.');
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl text-center">BusinessHub</CardTitle>
+          <p className="text-center text-slate-600">Manage your business operations</p>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="login">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="login">
+            <TabsContent value="login" className="space-y-4">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <Label htmlFor="login-email">Email</Label>
+                  <Label htmlFor="login-email">Email Address</Label>
                   <Input
                     id="login-email"
                     type="email"
@@ -70,6 +90,7 @@ export const LoginForm = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="your@email.com"
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 
@@ -82,13 +103,21 @@ export const LoginForm = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Your password"
                     required
+                    disabled={isLoading}
                   />
                 </div>
 
                 {error && (
-                  <div className="flex items-center space-x-2 text-red-600 text-sm">
+                  <div className="flex items-center space-x-2 text-red-600 text-sm bg-red-50 p-3 rounded-md">
                     <AlertCircle size={16} />
                     <span>{error}</span>
+                  </div>
+                )}
+
+                {message && (
+                  <div className="flex items-center space-x-2 text-green-600 text-sm bg-green-50 p-3 rounded-md">
+                    <CheckCircle size={16} />
+                    <span>{message}</span>
                   </div>
                 )}
 
@@ -98,7 +127,7 @@ export const LoginForm = () => {
               </form>
             </TabsContent>
             
-            <TabsContent value="signup">
+            <TabsContent value="signup" className="space-y-4">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div>
                   <Label htmlFor="signup-name">Full Name</Label>
@@ -109,11 +138,12 @@ export const LoginForm = () => {
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Your full name"
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email">Email Address</Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -121,6 +151,7 @@ export const LoginForm = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="your@email.com"
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 
@@ -131,22 +162,23 @@ export const LoginForm = () => {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Choose a password"
+                    placeholder="Choose a password (min. 6 characters)"
                     required
                     minLength={6}
+                    disabled={isLoading}
                   />
                 </div>
 
                 {error && (
-                  <div className="flex items-center space-x-2 text-red-600 text-sm">
+                  <div className="flex items-center space-x-2 text-red-600 text-sm bg-red-50 p-3 rounded-md">
                     <AlertCircle size={16} />
                     <span>{error}</span>
                   </div>
                 )}
 
                 {message && (
-                  <div className="flex items-center space-x-2 text-green-600 text-sm">
-                    <AlertCircle size={16} />
+                  <div className="flex items-center space-x-2 text-green-600 text-sm bg-green-50 p-3 rounded-md">
+                    <CheckCircle size={16} />
                     <span>{message}</span>
                   </div>
                 )}

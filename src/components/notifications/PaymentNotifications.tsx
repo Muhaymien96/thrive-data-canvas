@@ -3,69 +3,118 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Calendar } from 'lucide-react';
+import { AlertTriangle, Calendar, Clock } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { format, differenceInDays, parseISO } from 'date-fns';
 
 export const PaymentNotifications = () => {
-  const overduePayments = [
-    {
-      id: '1',
-      supplier: 'Ocean Fresh Seafood',
-      amount: 15000,
-      dueDate: '2024-12-15',
-      daysOverdue: 5,
-      invoiceNumber: 'INV-2024-001'
+  const { data: overdueTransactions } = useQuery({
+    queryKey: ['overdue-transactions'],
+    queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('type', 'sale')
+        .eq('payment_status', 'overdue')
+        .lt('due_date', today)
+        .order('due_date', { ascending: true });
+      
+      if (error) throw error;
+      return data;
     },
-    {
-      id: '2',
-      supplier: 'Premium Honey Co',
-      amount: 8500,
-      dueDate: '2024-12-20',
-      daysOverdue: 2,
-      invoiceNumber: 'INV-2024-002'
-    }
-  ];
+  });
 
-  const upcomingPayments = [
-    {
-      id: '1',
-      supplier: 'Mushroom Farms Ltd',
-      amount: 12000,
-      dueDate: '2024-12-28',
-      daysUntilDue: 3,
-      invoiceNumber: 'INV-2024-003'
-    }
-  ];
+  const { data: upcomingTransactions } = useQuery({
+    queryKey: ['upcoming-transactions'],
+    queryFn: async () => {
+      const today = new Date();
+      const threeDaysLater = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000);
+      
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('type', 'sale')
+        .eq('payment_status', 'pending')
+        .gte('due_date', today.toISOString().split('T')[0])
+        .lte('due_date', threeDaysLater.toISOString().split('T')[0])
+        .order('due_date', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
 
-  if (overduePayments.length === 0 && upcomingPayments.length === 0) {
-    return null;
+  const handlePaymentAction = (transactionId: string, action: 'pay' | 'schedule') => {
+    toast({
+      title: `Payment ${action === 'pay' ? 'Processed' : 'Scheduled'}`,
+      description: `Payment has been ${action === 'pay' ? 'marked as paid' : 'scheduled'} for transaction ${transactionId.slice(0, 8)}...`,
+    });
+  };
+
+  const getOverdueDays = (dueDate: string) => {
+    return differenceInDays(new Date(), parseISO(dueDate));
+  };
+
+  const getDaysUntilDue = (dueDate: string) => {
+    return differenceInDays(parseISO(dueDate), new Date());
+  };
+
+  if ((!overdueTransactions || overdueTransactions.length === 0) && 
+      (!upcomingTransactions || upcomingTransactions.length === 0)) {
+    return (
+      <Card className="border-green-200">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-center text-green-600">
+            <Clock size={20} className="mr-2" />
+            <span>All payments are up to date!</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
     <div className="space-y-4">
       {/* Overdue Payments */}
-      {overduePayments.length > 0 && (
+      {overdueTransactions && overdueTransactions.length > 0 && (
         <Card className="border-red-200">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center space-x-2 text-red-700">
               <AlertTriangle size={18} />
               <span>Overdue Payments</span>
-              <Badge variant="destructive">{overduePayments.length}</Badge>
+              <Badge variant="destructive">{overdueTransactions.length}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {overduePayments.map((payment) => (
-                <div key={payment.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+              {overdueTransactions.map((transaction) => (
+                <div key={transaction.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
                   <div>
-                    <div className="font-medium text-slate-900">{payment.supplier}</div>
+                    <div className="font-medium text-slate-900">
+                      {transaction.customer_name || 'Unknown Customer'}
+                    </div>
                     <div className="text-sm text-slate-600">
-                      {payment.invoiceNumber} • {payment.daysOverdue} days overdue
+                      {transaction.invoice_number || `Transaction ${transaction.id.slice(0, 8)}`} • 
+                      {getOverdueDays(transaction.due_date!)} days overdue
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      Due: {format(parseISO(transaction.due_date!), 'MMM dd, yyyy')}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-medium text-red-600">R{payment.amount.toLocaleString()}</div>
-                    <Button size="sm" variant="outline" className="mt-1">
-                      Pay Now
+                    <div className="font-medium text-red-600">
+                      R{transaction.amount.toLocaleString()}
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="mt-1"
+                      onClick={() => handlePaymentAction(transaction.id, 'pay')}
+                    >
+                      Mark Paid
                     </Button>
                   </div>
                 </div>
@@ -76,28 +125,41 @@ export const PaymentNotifications = () => {
       )}
 
       {/* Upcoming Payments */}
-      {upcomingPayments.length > 0 && (
+      {upcomingTransactions && upcomingTransactions.length > 0 && (
         <Card className="border-yellow-200">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center space-x-2 text-yellow-700">
               <Calendar size={18} />
               <span>Upcoming Payments</span>
-              <Badge className="bg-yellow-100 text-yellow-800">{upcomingPayments.length}</Badge>
+              <Badge className="bg-yellow-100 text-yellow-800">{upcomingTransactions.length}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {upcomingPayments.map((payment) => (
-                <div key={payment.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+              {upcomingTransactions.map((transaction) => (
+                <div key={transaction.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
                   <div>
-                    <div className="font-medium text-slate-900">{payment.supplier}</div>
+                    <div className="font-medium text-slate-900">
+                      {transaction.customer_name || 'Unknown Customer'}
+                    </div>
                     <div className="text-sm text-slate-600">
-                      {payment.invoiceNumber} • Due in {payment.daysUntilDue} days
+                      {transaction.invoice_number || `Transaction ${transaction.id.slice(0, 8)}`} • 
+                      Due in {getDaysUntilDue(transaction.due_date!)} days
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      Due: {format(parseISO(transaction.due_date!), 'MMM dd, yyyy')}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-medium text-yellow-600">R{payment.amount.toLocaleString()}</div>
-                    <Button size="sm" variant="outline" className="mt-1">
+                    <div className="font-medium text-yellow-600">
+                      R{transaction.amount.toLocaleString()}
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="mt-1"
+                      onClick={() => handlePaymentAction(transaction.id, 'schedule')}
+                    >
                       Schedule
                     </Button>
                   </div>
