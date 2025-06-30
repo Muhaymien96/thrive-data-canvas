@@ -106,3 +106,16 @@ export interface Customer {
   invoicePreference: 'email' | 'print' | 'both';
   paymentTerms: number; // days
 }
+
+export interface Supplier {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  business: string;
+  category: string;
+  totalSpent: number;
+  rating: number;
+  lastOrder: string;
+}

@@ -10,11 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import type { Business } from '@/types/transaction';
+import type { BusinessWithAll } from '@/types/transaction';
 
 interface EventFormProps {
   onClose: () => void;
-  defaultBusiness: Business;
+  defaultBusiness: BusinessWithAll;
   selectedDate?: Date;
 }
 
@@ -34,7 +34,6 @@ export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormP
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Event data:', formData);
-    // Here you would typically save the event to your data store
     onClose();
   };
 
@@ -173,7 +172,6 @@ export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormP
           </div>
         </div>
 
-        {/* Profit Calculation Display */}
         {(formData.marketCost || formData.totalRevenue) && (
           <div className="bg-slate-50 p-4 rounded-lg">
             <div className="flex justify-between items-center">

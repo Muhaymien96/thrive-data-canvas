@@ -1,106 +1,111 @@
 
 import React from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { mockOutstandingPayments } from '@/lib/mockData';
-import { AlertTriangle, Clock } from 'lucide-react';
+import { AlertTriangle, Calendar, DollarSign } from 'lucide-react';
 
-interface PaymentNotificationsProps {
-  context?: 'customers' | 'suppliers' | 'general';
-}
-
-export const PaymentNotifications = ({ context = 'general' }: PaymentNotificationsProps) => {
-  const today = new Date();
-  
-  // Filter payments based on context
-  let relevantPayments = mockOutstandingPayments;
-  if (context === 'customers') {
-    relevantPayments = mockOutstandingPayments.filter(payment => payment.type === 'receivable');
-  } else if (context === 'suppliers') {
-    relevantPayments = mockOutstandingPayments.filter(payment => payment.type === 'payable');
-  }
-  
-  const urgentPayments = relevantPayments.filter(payment => {
-    const dueDate = new Date(payment.dueDate);
-    const daysDiff = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
-    return daysDiff <= 7;
-  });
-
-  const overduePayments = urgentPayments.filter(payment => {
-    const dueDate = new Date(payment.dueDate);
-    return dueDate < today;
-  });
-
-  const upcomingPayments = urgentPayments.filter(payment => {
-    const dueDate = new Date(payment.dueDate);
-    return dueDate >= today;
-  });
-
-  if (urgentPayments.length === 0) return null;
-
-  const getOverdueTitle = () => {
-    if (context === 'customers') return `Overdue Customer Payments (${overduePayments.length})`;
-    if (context === 'suppliers') return `Overdue Supplier Payments (${overduePayments.length})`;
-    return `Overdue Payments (${overduePayments.length})`;
-  };
-
-  const getUpcomingTitle = () => {
-    if (context === 'customers') return `Upcoming Customer Payments (${upcomingPayments.length})`;
-    if (context === 'suppliers') return `Upcoming Supplier Payments (${upcomingPayments.length})`;
-    return `Upcoming Payments (${upcomingPayments.length})`;
-  };
-
-  const getPaymentDescription = (payment: any) => {
-    if (context === 'customers') {
-      return `Money owed to you by ${payment.counterparty}`;
-    } else if (context === 'suppliers') {
-      return `Money you owe to ${payment.counterparty}`;
-    } else {
-      return payment.type === 'receivable' 
-        ? `Money owed to you by ${payment.counterparty}`
-        : `Money you owe to ${payment.counterparty}`;
+export const PaymentNotifications = () => {
+  const overduePayments = [
+    {
+      id: '1',
+      supplier: 'Ocean Fresh Seafood',
+      amount: 15000,
+      dueDate: '2024-12-15',
+      daysOverdue: 5,
+      invoiceNumber: 'INV-2024-001'
+    },
+    {
+      id: '2',
+      supplier: 'Premium Honey Co',
+      amount: 8500,
+      dueDate: '2024-12-20',
+      daysOverdue: 2,
+      invoiceNumber: 'INV-2024-002'
     }
-  };
+  ];
+
+  const upcomingPayments = [
+    {
+      id: '1',
+      supplier: 'Mushroom Farms Ltd',
+      amount: 12000,
+      dueDate: '2024-12-28',
+      daysUntilDue: 3,
+      invoiceNumber: 'INV-2024-003'
+    }
+  ];
+
+  if (overduePayments.length === 0 && upcomingPayments.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="space-y-4 mb-6">
+    <div className="space-y-4">
+      {/* Overdue Payments */}
       {overduePayments.length > 0 && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>{getOverdueTitle()}</AlertTitle>
-          <AlertDescription>
-            <div className="space-y-2 mt-2">
+        <Card className="border-red-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center space-x-2 text-red-700">
+              <AlertTriangle size={18} />
+              <span>Overdue Payments</span>
+              <Badge variant="destructive">{overduePayments.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
               {overduePayments.map((payment) => (
-                <div key={payment.id} className="flex items-center justify-between">
-                  <span className="text-sm">
-                    {getPaymentDescription(payment)}
-                  </span>
-                  <Badge variant="destructive">R{payment.amount.toLocaleString()}</Badge>
+                <div key={payment.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                  <div>
+                    <div className="font-medium text-slate-900">{payment.supplier}</div>
+                    <div className="text-sm text-slate-600">
+                      {payment.invoiceNumber} • {payment.daysOverdue} days overdue
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium text-red-600">R{payment.amount.toLocaleString()}</div>
+                    <Button size="sm" variant="outline" className="mt-1">
+                      Pay Now
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
-          </AlertDescription>
-        </Alert>
+          </CardContent>
+        </Card>
       )}
 
+      {/* Upcoming Payments */}
       {upcomingPayments.length > 0 && (
-        <Alert>
-          <Clock className="h-4 w-4" />
-          <AlertTitle>{getUpcomingTitle()}</AlertTitle>
-          <AlertDescription>
-            <div className="space-y-2 mt-2">
+        <Card className="border-yellow-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center space-x-2 text-yellow-700">
+              <Calendar size={18} />
+              <span>Upcoming Payments</span>
+              <Badge className="bg-yellow-100 text-yellow-800">{upcomingPayments.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
               {upcomingPayments.map((payment) => (
-                <div key={payment.id} className="flex items-center justify-between">
-                  <span className="text-sm">
-                    {getPaymentDescription(payment)} 
-                    ({new Date(payment.dueDate).toLocaleDateString()})
-                  </span>
-                  <Badge variant="secondary">R{payment.amount.toLocaleString()}</Badge>
+                <div key={payment.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                  <div>
+                    <div className="font-medium text-slate-900">{payment.supplier}</div>
+                    <div className="text-sm text-slate-600">
+                      {payment.invoiceNumber} • Due in {payment.daysUntilDue} days
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium text-yellow-600">R{payment.amount.toLocaleString()}</div>
+                    <Button size="sm" variant="outline" className="mt-1">
+                      Schedule
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
-          </AlertDescription>
-        </Alert>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

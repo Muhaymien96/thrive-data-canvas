@@ -30,7 +30,7 @@ export const AdminDashboard = () => {
       case 'dashboard':
         return selectedBusiness === 'All' ? 
           <DashboardOverview selectedBusiness={selectedBusiness} /> :
-          <BusinessView business={selectedBusiness as Business} />;
+          <BusinessView business={selectedBusiness} />;
       case 'transactions':
         return <TransactionsView selectedBusiness={selectedBusiness} />;
       case 'suppliers':
