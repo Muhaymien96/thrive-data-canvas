@@ -87,7 +87,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     const transactionData = {
       ...formData,
       business_id: businessId,
-      invoice_generated: Boolean(formData.invoice_generated || false)
+      invoice_generated: Boolean(formData.invoice_generated)
     };
 
     // Clear unused fields based on transaction type

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X } from 'lucide-react';
+import { useCreateEmployee, useUpdateEmployee } from '@/hooks/useEmployees';
 import type { Employee } from '@/types/database';
 
 interface EmployeeFormProps {
@@ -33,10 +34,35 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
     }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const createEmployeeMutation = useCreateEmployee();
+  const updateEmployeeMutation = useUpdateEmployee();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData as Employee);
+    
+    try {
+      if (employee) {
+        // Update existing employee
+        const updatedEmployee = await updateEmployeeMutation.mutateAsync({
+          id: employee.id,
+          ...formData
+        });
+        onSave(updatedEmployee);
+      } else {
+        // Create new employee
+        const newEmployee = await createEmployeeMutation.mutateAsync({
+          ...formData,
+          business_id: formData.business_id || ''
+        });
+        onSave(newEmployee);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Error saving employee:', error);
+    }
   };
+
+  const isLoading = createEmployeeMutation.isPending || updateEmployeeMutation.isPending;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -202,11 +228,11 @@ export const EmployeeForm = ({ employee, onClose, onSave }: EmployeeFormProps) =
             )}
 
             <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
                 Cancel
               </Button>
-              <Button type="submit">
-                {employee ? 'Update Employee' : 'Add Employee'}
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? 'Saving...' : (employee ? 'Update Employee' : 'Add Employee')}
               </Button>
             </div>
           </form>

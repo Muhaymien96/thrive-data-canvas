@@ -14,24 +14,6 @@ interface EmployeesViewProps {
   selectedBusiness: BusinessWithAll;
 }
 
-// Create a mock employee that matches the database schema
-const createMockEmployee = (): Partial<Employee> => ({
-  id: 'mock-id',
-  name: '',
-  email: '',
-  phone: '',
-  business_id: '',
-  position: '',
-  hourly_rate: 0,
-  salary: 0, // Add missing salary field
-  start_date: new Date().toISOString().split('T')[0],
-  status: 'active',
-  payment_method: 'bank_transfer',
-  bank_details: null, // Add missing bank_details field
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString()
-});
-
 export const EmployeesView = ({ selectedBusiness }: EmployeesViewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -61,6 +43,38 @@ export const EmployeesView = ({ selectedBusiness }: EmployeesViewProps) => {
     setShowCostTracking(false);
   };
 
+  const handleAddEmployee = () => {
+    if (selectedBusiness === 'All') {
+      alert('Please select a specific business to add an employee.');
+      return;
+    }
+    
+    // Create a new employee with the selected business ID
+    const newEmployee: Partial<Employee> = {
+      id: 'new',
+      name: '',
+      email: '',
+      phone: '',
+      business_id: selectedBusiness.id,
+      position: '',
+      hourly_rate: 0,
+      salary: 0,
+      start_date: new Date().toISOString().split('T')[0],
+      status: 'active',
+      payment_method: 'bank_transfer',
+      bank_details: {
+        accountNumber: '',
+        bankName: '',
+        branchCode: ''
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    setSelectedEmployee(newEmployee as Employee);
+    setShowAddForm(true);
+  };
+
   if (error) {
     return (
       <div className="space-y-6">
@@ -88,7 +102,7 @@ export const EmployeesView = ({ selectedBusiness }: EmployeesViewProps) => {
             <DollarSign size={16} className="mr-2" />
             Record Cost
           </Button>
-          <Button onClick={() => setShowAddForm(true)}>
+          <Button onClick={handleAddEmployee}>
             <Plus size={16} className="mr-2" />
             Add Employee
           </Button>
