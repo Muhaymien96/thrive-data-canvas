@@ -10,32 +10,36 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useCreateEvent } from '@/hooks/useEvents';
+import { useCreateEvent, useUpdateEvent } from '@/hooks/useEvents';
 import { useBusinessData } from '@/hooks/useBusinessData';
 import { toast } from '@/hooks/use-toast';
-import type { BusinessWithAll } from '@/types/database';
+import type { BusinessWithAll, Event } from '@/types/database';
 
 interface EventFormProps {
   onClose: () => void;
   defaultBusiness: BusinessWithAll;
   selectedDate?: Date;
+  initialData?: Event;
 }
 
-export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormProps) => {
+export const EventForm = ({ onClose, defaultBusiness, selectedDate, initialData }: EventFormProps) => {
   const [formData, setFormData] = useState({
-    title: '',
-    location: '',
-    date: selectedDate || new Date(),
-    business_id: defaultBusiness === 'All' ? '' : (typeof defaultBusiness === 'string' ? defaultBusiness : defaultBusiness.id),
-    description: '',
-    startTime: '',
+    title: initialData?.title || '',
+    location: initialData?.location || '',
+    date: initialData ? new Date(initialData.date) : (selectedDate || new Date()),
+    business_id: initialData?.business_id || (defaultBusiness === 'All' ? '' : (typeof defaultBusiness === 'string' ? defaultBusiness : defaultBusiness.id)),
+    description: initialData?.description || '',
+    startTime: initialData?.time || '',
     endTime: '',
-    type: 'meeting' as const,
-    status: 'upcoming' as const
+    type: (initialData?.type as any) || 'meeting' as const,
+    status: (initialData?.status as any) || 'upcoming' as const
   });
 
   const createEvent = useCreateEvent();
+  const updateEvent = useUpdateEvent();
   const { businesses, isLoading: businessesLoading } = useBusinessData();
+
+  const isEditing = !!initialData;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,13 +65,20 @@ export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormP
         business_id: formData.business_id
       };
 
-      await createEvent.mutateAsync(eventData);
+      if (isEditing && initialData) {
+        await updateEvent.mutateAsync({
+          id: initialData.id,
+          ...eventData
+        });
+      } else {
+        await createEvent.mutateAsync(eventData);
+      }
       onClose();
     } catch (error) {
-      console.error('Error creating event:', error);
+      console.error('Error saving event:', error);
       toast({
         title: "Error",
-        description: "Failed to create event. Please try again.",
+        description: `Failed to ${isEditing ? 'update' : 'create'} event. Please try again.`,
         variant: "destructive",
       });
     }
@@ -80,7 +91,9 @@ export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormP
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Add New Event</h2>
+        <h2 className="text-xl font-semibold">
+          {isEditing ? 'Edit Event' : 'Add New Event'}
+        </h2>
         <Button variant="outline" onClick={onClose}>
           Cancel
         </Button>
@@ -220,15 +233,18 @@ export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormP
             type="button" 
             variant="outline" 
             onClick={onClose}
-            disabled={createEvent.isPending}
+            disabled={createEvent.isPending || updateEvent.isPending}
           >
             Cancel
           </Button>
           <Button 
             type="submit"
-            disabled={createEvent.isPending}
+            disabled={createEvent.isPending || updateEvent.isPending}
           >
-            {createEvent.isPending ? 'Creating...' : 'Add Event'}
+            {createEvent.isPending || updateEvent.isPending 
+              ? (isEditing ? 'Updating...' : 'Creating...') 
+              : (isEditing ? 'Update Event' : 'Add Event')
+            }
           </Button>
         </div>
       </form>
