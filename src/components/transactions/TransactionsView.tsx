@@ -23,7 +23,7 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   
-  const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness;
+  const businessId = selectedBusiness === 'All' ? undefined : (typeof selectedBusiness === 'string' ? selectedBusiness : selectedBusiness.id);
   const { data: transactions = [], isLoading, error } = useTransactions(businessId);
 
   const handleSaveTransaction = (transactionData: any) => {

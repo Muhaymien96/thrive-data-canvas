@@ -12,7 +12,7 @@ interface StockNotificationsProps {
 }
 
 export const StockNotifications = ({ selectedBusiness }: StockNotificationsProps) => {
-  const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness;
+  const businessId = selectedBusiness === 'All' ? undefined : (typeof selectedBusiness === 'string' ? selectedBusiness : selectedBusiness.id);
   const { data: products = [] } = useProducts(businessId);
   
   const lowStockProducts = products.filter(p => 

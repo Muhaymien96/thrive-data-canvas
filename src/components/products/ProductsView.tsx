@@ -19,7 +19,7 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState<'products' | 'stock' | 'invoices'>('products');
   
-  const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness;
+  const businessId = selectedBusiness === 'All' ? undefined : (typeof selectedBusiness === 'string' ? selectedBusiness : selectedBusiness.id);
   const { data: products = [], isLoading, error } = useProducts(businessId);
   
   const lowStockProducts = products.filter(p => 
@@ -140,7 +140,6 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
         <ProductTable 
           products={products} 
           selectedBusiness={selectedBusiness}
-          isLoading={isLoading}
         />
       )}
       
@@ -157,7 +156,7 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <ProductForm 
               onClose={() => setShowForm(false)} 
-              defaultBusiness={selectedBusiness === 'All' ? undefined : selectedBusiness}
+              defaultBusiness={selectedBusiness === 'All' ? undefined : (typeof selectedBusiness === 'string' ? selectedBusiness : selectedBusiness.id)}
             />
           </div>
         </div>

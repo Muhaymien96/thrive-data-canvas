@@ -29,7 +29,7 @@ export const AdminDashboard = () => {
 
   React.useEffect(() => {
     if (businesses && businesses.length > 0 && selectedBusiness === 'All') {
-      setSelectedBusiness(businesses[0].id as BusinessWithAll);
+      setSelectedBusiness(businesses[0]);
     }
   }, [businesses, selectedBusiness]);
 

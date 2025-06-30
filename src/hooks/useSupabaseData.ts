@@ -112,7 +112,8 @@ export const useDashboardData = (selectedBusiness: BusinessWithAll) => {
         .eq('type', 'sale');
       
       if (selectedBusiness !== 'All') {
-        transactionQuery = transactionQuery.eq('business_id', selectedBusiness);
+        const businessId = typeof selectedBusiness === 'string' ? selectedBusiness : selectedBusiness.id;
+        transactionQuery = transactionQuery.eq('business_id', businessId);
       }
       
       const { data: transactions, error: transactionError } = await transactionQuery;

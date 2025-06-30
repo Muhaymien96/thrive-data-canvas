@@ -17,7 +17,7 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
 
-  const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness;
+  const businessId = selectedBusiness === 'All' ? undefined : (typeof selectedBusiness === 'string' ? selectedBusiness : selectedBusiness.id);
   const { data: suppliers = [], isLoading, error } = useSuppliers(businessId);
 
   const filteredSuppliers = suppliers.filter(supplier =>
@@ -58,7 +58,7 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <SupplierForm onClose={() => setShowForm(false)} />
+            <SupplierForm onClose={() => setShowForm(false)} selectedBusiness={selectedBusiness} />
           </div>
         </div>
       )}

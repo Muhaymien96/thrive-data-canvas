@@ -20,7 +20,7 @@ export const CustomersView = ({ selectedBusiness }: CustomersViewProps) => {
   const [showForm, setShowForm] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
-  const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness;
+  const businessId = selectedBusiness === 'All' ? undefined : (typeof selectedBusiness === 'string' ? selectedBusiness : selectedBusiness.id);
   const { data: customers = [], isLoading, error } = useCustomers(businessId);
 
   const filteredCustomers = customers.filter(customer =>
