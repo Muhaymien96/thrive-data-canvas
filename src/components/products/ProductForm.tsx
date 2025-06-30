@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,8 +6,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X } from 'lucide-react';
-import { useSuppliers } from '@/hooks/useSuppliers';
+import { useSuppliers, useCreateSupplier } from '@/hooks/useSuppliers';
 import { useCreateProduct } from '@/hooks/useProducts';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface ProductFormProps {
   onClose: () => void;
@@ -30,14 +31,60 @@ export const ProductForm = ({ onClose, defaultBusiness }: ProductFormProps) => {
     expiryDate: ''
   });
 
-  const { data: suppliers = [], isLoading: suppliersLoading } = useSuppliers(defaultBusiness);
+  const { data: suppliers = [], isLoading: suppliersLoading, refetch: refetchSuppliers } = useSuppliers(defaultBusiness);
   const createProduct = useCreateProduct();
+  const createSupplier = useCreateSupplier();
+
+  // Ensure self-supplier exists when component mounts
+  useEffect(() => {
+    const ensureSelfSupplier = async () => {
+      if (!defaultBusiness || !suppliers) return;
+      
+      console.log('Checking for self-supplier. Current suppliers:', suppliers);
+      
+      const selfSupplier = suppliers.find(s => s.name === 'Self-Produced');
+      if (!selfSupplier) {
+        console.log('Self-supplier not found, creating one...');
+        try {
+          await createSupplier.mutateAsync({
+            business_id: defaultBusiness,
+            name: 'Self-Produced',
+            category: 'Internal Production',
+            rating: 5,
+            total_spent: 0,
+            outstanding_balance: 0
+          });
+          // Refetch suppliers after creating self-supplier
+          refetchSuppliers();
+        } catch (error) {
+          console.error('Failed to create self-supplier:', error);
+        }
+      }
+    };
+
+    if (suppliers.length >= 0 && !suppliersLoading) {
+      ensureSelfSupplier();
+    }
+  }, [suppliers, suppliersLoading, defaultBusiness, createSupplier, refetchSuppliers]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!defaultBusiness || !formData.supplierId) {
-      console.error('Business ID and Supplier are required');
+    if (!defaultBusiness) {
+      toast({
+        title: "Error",
+        description: "Business ID is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.supplierId) {
+      toast({
+        title: "Error",
+        description: "Please select a supplier",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -60,10 +107,16 @@ export const ProductForm = ({ onClose, defaultBusiness }: ProductFormProps) => {
           ((parseFloat(formData.price) - parseFloat(formData.cost)) / parseFloat(formData.cost) * 100) : null
       };
 
+      console.log('Creating product with data:', productData);
       await createProduct.mutateAsync(productData);
       onClose();
     } catch (error) {
       console.error('Error creating product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create product. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

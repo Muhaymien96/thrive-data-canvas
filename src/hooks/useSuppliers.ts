@@ -35,13 +35,10 @@ export const useSuppliers = (businessId?: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Simplified query - just get suppliers for the business
       let query = supabase
         .from('suppliers')
-        .select(`
-          *,
-          businesses!inner(owner_id)
-        `)
-        .eq('businesses.owner_id', user.id)
+        .select('*')
         .order('name', { ascending: true });
       
       if (businessId && businessId !== 'All') {
@@ -55,9 +52,10 @@ export const useSuppliers = (businessId?: string) => {
         throw error;
       }
       
+      console.log('Fetched suppliers:', data);
       return data as Supplier[];
     },
-    enabled: true,
+    enabled: !!businessId && businessId !== 'All',
   });
 };
 
