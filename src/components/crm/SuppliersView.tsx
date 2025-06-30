@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,7 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
 
-  const businessId = selectedBusiness === 'All' ? undefined : (typeof selectedBusiness === 'string' ? selectedBusiness : selectedBusiness.id);
+  const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness.id;
   const { data: suppliers = [], isLoading, error } = useSuppliers(businessId);
 
   const filteredSuppliers = suppliers.filter(supplier =>

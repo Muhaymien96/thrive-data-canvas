@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import type { BusinessWithAll } from '@/types/transaction';
+import type { BusinessWithAll } from '@/types/database';
 
 interface EventFormProps {
   onClose: () => void;
@@ -23,7 +23,7 @@ export const EventForm = ({ onClose, defaultBusiness, selectedDate }: EventFormP
     name: '',
     location: '',
     date: selectedDate || new Date(),
-    business: defaultBusiness === 'All' ? 'Fish' : defaultBusiness,
+    business: defaultBusiness === 'All' ? 'Fish' : (typeof defaultBusiness === 'string' ? defaultBusiness : defaultBusiness.name),
     marketCost: '',
     totalRevenue: '',
     notes: '',
