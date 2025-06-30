@@ -139,6 +139,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
   };
 
   const handleCustomerSelect = (customerId: string) => {
+    if (customerId === 'none') return;
     const customer = customers.find(c => c.id === customerId);
     setFormData(prev => ({
       ...prev,
@@ -148,6 +149,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
   };
 
   const handleSupplierSelect = (supplierId: string) => {
+    if (supplierId === 'none') return;
     const supplier = suppliers.find(s => s.id === supplierId);
     setFormData(prev => ({
       ...prev,
@@ -157,6 +159,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
   };
 
   const handleEmployeeSelect = (employeeId: string) => {
+    if (employeeId === 'none') return;
     const employee = employees.find(e => e.id === employeeId);
     setFormData(prev => ({
       ...prev,
@@ -303,7 +306,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                 </div>
                 <Select
                   value={formData.customer_id || 'none'}
-                  onValueChange={(value) => value !== 'none' && handleCustomerSelect(value)}
+                  onValueChange={handleCustomerSelect}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select customer or add new" />
@@ -337,7 +340,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                 </div>
                 <Select
                   value={formData.supplier_id || 'none'}
-                  onValueChange={(value) => value !== 'none' && handleSupplierSelect(value)}
+                  onValueChange={handleSupplierSelect}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select supplier or add new" />
@@ -361,7 +364,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                   <Label>Employee</Label>
                   <Select
                     value={formData.employee_id || 'none'}
-                    onValueChange={(value) => value !== 'none' && handleEmployeeSelect(value)}
+                    onValueChange={handleEmployeeSelect}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select employee" />
