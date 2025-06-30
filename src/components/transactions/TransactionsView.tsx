@@ -2,11 +2,13 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { TransactionForm } from './TransactionForm';
 import { CSVUpload } from './CSVUpload';
 import { YocoCSVUpload } from './YocoCSVUpload';
+import { InvoiceFromTransactionModal } from './InvoiceFromTransactionModal';
 import { mockTransactions } from '@/lib/mockData';
-import { Plus, Upload, CreditCard } from 'lucide-react';
+import { Plus, Upload, CreditCard, FileText, Eye } from 'lucide-react';
 import type { BusinessWithAll, Transaction } from '@/types/transaction';
 
 interface TransactionsViewProps {
@@ -17,6 +19,8 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
   const [showForm, setShowForm] = useState(false);
   const [showCSVUpload, setShowCSVUpload] = useState(false);
   const [showYocoUpload, setShowYocoUpload] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   
   const filteredTransactions = selectedBusiness === 'All' 
     ? mockTransactions 
@@ -26,6 +30,29 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
     console.log('Saving transaction:', transaction);
     // TODO: Implement actual save logic with Supabase
     setShowForm(false);
+  };
+
+  const handleGenerateInvoice = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setShowInvoiceModal(true);
+  };
+
+  const handleViewTransaction = (transaction: Transaction) => {
+    console.log('Viewing transaction details:', transaction);
+    // TODO: Implement transaction detail view
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'overdue':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-slate-100 text-slate-800';
+    }
   };
 
   return (
@@ -89,6 +116,22 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
         </div>
       )}
 
+      {/* Invoice Generation Modal */}
+      {showInvoiceModal && selectedTransaction && (
+        <InvoiceFromTransactionModal
+          transaction={selectedTransaction}
+          onClose={() => {
+            setShowInvoiceModal(false);
+            setSelectedTransaction(null);
+          }}
+          onSubmit={(invoiceData) => {
+            console.log('Invoice generated from transaction:', invoiceData);
+            setShowInvoiceModal(false);
+            setSelectedTransaction(null);
+          }}
+        />
+      )}
+
       {/* Transactions Table */}
       <Card>
         <CardHeader>
@@ -104,6 +147,9 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
                   <th className="text-left py-3 px-4 font-medium text-slate-600">Type</th>
                   <th className="text-left py-3 px-4 font-medium text-slate-600">Amount</th>
                   <th className="text-left py-3 px-4 font-medium text-slate-600">Customer</th>
+                  <th className="text-left py-3 px-4 font-medium text-slate-600">Status</th>
+                  <th className="text-left py-3 px-4 font-medium text-slate-600">Invoice</th>
+                  <th className="text-left py-3 px-4 font-medium text-slate-600">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -122,6 +168,42 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
                     <td className="py-3 px-4 text-sm capitalize">{transaction.type}</td>
                     <td className="py-3 px-4 text-sm font-medium">R{transaction.amount.toLocaleString()}</td>
                     <td className="py-3 px-4 text-sm">{transaction.customer}</td>
+                    <td className="py-3 px-4 text-sm">
+                      {transaction.paymentStatus && (
+                        <Badge className={`text-xs ${getStatusColor(transaction.paymentStatus)}`}>
+                          {transaction.paymentStatus}
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-sm">
+                      {transaction.invoiceGenerated ? (
+                        <Badge className="bg-green-100 text-green-800 text-xs">
+                          {transaction.invoiceNumber}
+                        </Badge>
+                      ) : (
+                        <span className="text-slate-400 text-xs">None</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewTransaction(transaction)}
+                        >
+                          <Eye size={14} />
+                        </Button>
+                        {transaction.type === 'sale' && !transaction.invoiceGenerated && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleGenerateInvoice(transaction)}
+                          >
+                            <FileText size={14} />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

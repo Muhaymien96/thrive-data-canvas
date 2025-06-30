@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { X, Plus, Save, Send } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { mockCustomers, mockProducts } from '@/lib/mockData';
@@ -107,7 +106,7 @@ export const InvoiceForm = ({ selectedBusiness, onClose, onSubmit }: InvoiceForm
       business: selectedBusiness === 'All' ? 'Fish' : selectedBusiness,
       status: isDraft ? 'draft' : 'sent',
       invoiceNumber: `INV-${Date.now()}`,
-      date: new Date().toISOString().split('T')[0],
+      issueDate: new Date().toISOString().split('T')[0],
     };
 
     console.log('Invoice data:', invoiceData);
@@ -155,7 +154,9 @@ export const InvoiceForm = ({ selectedBusiness, onClose, onSubmit }: InvoiceForm
                       <SelectValue placeholder="Select customer" />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockCustomers.map((customer) => (
+                      {mockCustomers.filter(customer => 
+                        selectedBusiness === 'All' || customer.business === selectedBusiness
+                      ).map((customer) => (
                         <SelectItem key={customer.id} value={customer.id}>
                           {customer.name}
                         </SelectItem>
@@ -239,13 +240,18 @@ export const InvoiceForm = ({ selectedBusiness, onClose, onSubmit }: InvoiceForm
                           <SelectValue placeholder="Select product" />
                         </SelectTrigger>
                         <SelectContent>
-                          {mockProducts.map((product) => (
+                          {mockProducts.filter(product => 
+                            selectedBusiness === 'All' || product.business === selectedBusiness
+                          ).map((product) => (
                             <SelectItem key={product.id} value={product.id}>
-                              {product.name}
+                              {product.name} - R{product.price.toFixed(2)}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      {errors.items?.[index]?.productId && (
+                        <p className="text-sm text-red-600">{errors.items[index]?.productId?.message}</p>
+                      )}
                     </div>
 
                     <div className="col-span-2">
@@ -258,6 +264,9 @@ export const InvoiceForm = ({ selectedBusiness, onClose, onSubmit }: InvoiceForm
                           onChange: (e) => updateItemTotal(index, parseInt(e.target.value) || 0, watchedItems[index].unitPrice)
                         })}
                       />
+                      {errors.items?.[index]?.quantity && (
+                        <p className="text-sm text-red-600">{errors.items[index]?.quantity?.message}</p>
+                      )}
                     </div>
 
                     <div className="col-span-2">
@@ -271,6 +280,9 @@ export const InvoiceForm = ({ selectedBusiness, onClose, onSubmit }: InvoiceForm
                           onChange: (e) => updateItemTotal(index, watchedItems[index].quantity, parseFloat(e.target.value) || 0)
                         })}
                       />
+                      {errors.items?.[index]?.unitPrice && (
+                        <p className="text-sm text-red-600">{errors.items[index]?.unitPrice?.message}</p>
+                      )}
                     </div>
 
                     <div className="col-span-2">

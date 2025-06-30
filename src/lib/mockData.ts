@@ -1,3 +1,4 @@
+
 import { faker } from '@faker-js/faker';
 import type { PaymentMethod, TransactionType, Business, BusinessWithAll, Transaction, YocoTransaction, Employee, Invoice, InvoiceItem, Customer, Supplier } from '@/types/transaction';
 
@@ -26,6 +27,9 @@ const generateTransaction = (id: string): Transaction => ({
   invoiceNumber: faker.string.alphanumeric(8),
   invoiceGenerated: faker.datatype.boolean(),
   invoiceDate: faker.date.past().toISOString().split('T')[0],
+  paymentStatus: faker.helpers.arrayElement(['paid', 'pending', 'overdue']),
+  dueDate: faker.date.future().toISOString().split('T')[0],
+  amountPaid: faker.number.float({ min: 0, max: 1000, precision: 0.01 }),
 });
 
 const generateYocoTransaction = (id: string): YocoTransaction => ({
@@ -102,6 +106,10 @@ const generateCustomer = (id: string): Customer => ({
   lastPurchase: faker.date.past().toISOString().split('T')[0],
   invoicePreference: faker.helpers.arrayElement(['email', 'print', 'both']),
   paymentTerms: faker.number.int({ min: 7, max: 60 }),
+  totalPurchases: faker.number.int({ min: 1, max: 50 }),
+  outstandingBalance: faker.number.float({ min: 0, max: 1000, precision: 0.01 }),
+  creditLimit: faker.number.float({ min: 1000, max: 10000, precision: 0.01 }),
+  tags: faker.helpers.arrayElements(['VIP', 'Regular', 'New', 'Bulk'], { min: 0, max: 2 }),
 });
 
 const generateSupplier = (id: string): Supplier => ({
@@ -117,6 +125,18 @@ const generateSupplier = (id: string): Supplier => ({
   lastOrder: faker.date.past().toISOString().split('T')[0],
 });
 
+// Product type definition
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  business: string;
+  category: string;
+  stock: number;
+  costPrice?: number;
+  markup?: number;
+}
+
 // Mock data arrays
 export const mockTransactions: Transaction[] = Array.from({ length: 50 }, (_, i) => generateTransaction(faker.string.uuid()));
 export const mockYocoTransactions: YocoTransaction[] = Array.from({ length: 20 }, (_, i) => generateYocoTransaction(faker.string.uuid()));
@@ -124,6 +144,69 @@ export const mockEmployees: Employee[] = Array.from({ length: 10 }, (_, i) => ge
 export const mockInvoices: Invoice[] = Array.from({ length: 30 }, (_, i) => generateInvoice(faker.string.uuid()));
 export const mockCustomers: Customer[] = Array.from({ length: 25 }, (_, i) => generateCustomer(faker.string.uuid()));
 export const mockSuppliers: Supplier[] = Array.from({ length: 15 }, (_, i) => generateSupplier(faker.string.uuid()));
+
+export const mockProducts: Product[] = [
+  {
+    id: '1',
+    name: 'Fresh Salmon',
+    price: 450.00,
+    business: 'Fish',
+    category: 'Seafood',
+    stock: 25,
+    costPrice: 300.00,
+    markup: 50,
+  },
+  {
+    id: '2',
+    name: 'Tuna Steaks',
+    price: 380.00,
+    business: 'Fish',
+    category: 'Seafood',
+    stock: 15,
+    costPrice: 250.00,
+    markup: 52,
+  },
+  {
+    id: '3',
+    name: 'Raw Honey',
+    price: 120.00,
+    business: 'Honey',
+    category: 'Natural',
+    stock: 50,
+    costPrice: 80.00,
+    markup: 50,
+  },
+  {
+    id: '4',
+    name: 'Honeycomb',
+    price: 85.00,
+    business: 'Honey',
+    category: 'Natural',
+    stock: 30,
+    costPrice: 55.00,
+    markup: 55,
+  },
+  {
+    id: '5',
+    name: 'Shiitake Mushrooms',
+    price: 65.00,
+    business: 'Mushrooms',
+    category: 'Fresh',
+    stock: 40,
+    costPrice: 40.00,
+    markup: 63,
+  },
+  {
+    id: '6',
+    name: 'Oyster Mushrooms',
+    price: 55.00,
+    business: 'Mushrooms',
+    category: 'Fresh',
+    stock: 35,
+    costPrice: 35.00,
+    markup: 57,
+  },
+];
 
 // Helper functions to filter data
 export const getTransactionsByBusiness = (business: BusinessWithAll): Transaction[] => {
@@ -161,53 +244,110 @@ export const getSuppliersByBusiness = (business: BusinessWithAll): Supplier[] =>
  return mockSuppliers.filter(supplier => supplier.business === business);
 };
 
-export const mockProducts = [
-  {
-    id: '1',
-    name: 'Fresh Salmon',
-    price: 450.00,
-    business: 'Fish',
-    category: 'Seafood',
-    stock: 25,
-  },
-  {
-    id: '2',
-    name: 'Tuna Steaks',
-    price: 380.00,
-    business: 'Fish',
-    category: 'Seafood',
-    stock: 15,
-  },
-  {
-    id: '3',
-    name: 'Raw Honey',
-    price: 120.00,
-    business: 'Honey',
-    category: 'Natural',
-    stock: 50,
-  },
-  {
-    id: '4',
-    name: 'Honeycomb',
-    price: 85.00,
-    business: 'Honey',
-    category: 'Natural',
-    stock: 30,
-  },
-  {
-    id: '5',
-    name: 'Shiitake Mushrooms',
-    price: 65.00,
-    business: 'Mushrooms',
-    category: 'Fresh',
-    stock: 40,
-  },
-  {
-    id: '6',
-    name: 'Oyster Mushrooms',
-    price: 55.00,
-    business: 'Mushrooms',
-    category: 'Fresh',
-    stock: 35,
-  },
-];
+export const getProductsByBusiness = (business: BusinessWithAll): Product[] => {
+  if (business === 'All') {
+    return mockProducts;
+  }
+  return mockProducts.filter(product => product.business === business);
+};
+
+// Business metrics and analytics functions
+export const getBusinessMetrics = (business: BusinessWithAll) => {
+  const transactions = getTransactionsByBusiness(business);
+  const revenue = transactions
+    .filter(t => t.type === 'sale')
+    .reduce((sum, t) => sum + t.amount, 0);
+  
+  const expenses = transactions
+    .filter(t => t.type === 'expense' || t.type === 'employee_cost')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  return {
+    totalRevenue: revenue,
+    totalExpenses: expenses,
+    netProfit: revenue - expenses,
+    transactionCount: transactions.length,
+    averageTransactionValue: revenue / transactions.filter(t => t.type === 'sale').length || 0,
+  };
+};
+
+export const getMonthlyRevenue = (business: BusinessWithAll, months: number = 12) => {
+  const transactions = getTransactionsByBusiness(business);
+  const monthlyData: { month: string; revenue: number; expenses: number }[] = [];
+  
+  for (let i = months - 1; i >= 0; i--) {
+    const date = new Date();
+    date.setMonth(date.getMonth() - i);
+    const monthKey = date.toISOString().slice(0, 7); // YYYY-MM format
+    
+    const monthTransactions = transactions.filter(t => t.date.startsWith(monthKey));
+    const revenue = monthTransactions
+      .filter(t => t.type === 'sale')
+      .reduce((sum, t) => sum + t.amount, 0);
+    const expenses = monthTransactions
+      .filter(t => t.type === 'expense' || t.type === 'employee_cost')
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    monthlyData.push({
+      month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      revenue,
+      expenses,
+    });
+  }
+  
+  return monthlyData;
+};
+
+// Stock and inventory functions
+export const getStockMovements = (productId?: string) => {
+  return Array.from({ length: 20 }, (_, i) => ({
+    id: faker.string.uuid(),
+    productId: productId || faker.helpers.arrayElement(mockProducts).id,
+    productName: faker.helpers.arrayElement(mockProducts).name,
+    type: faker.helpers.arrayElement(['in', 'out', 'adjustment']),
+    quantity: faker.number.int({ min: 1, max: 20 }),
+    date: faker.date.past().toISOString().split('T')[0],
+    reason: faker.lorem.sentence(),
+    reference: faker.string.alphanumeric(8),
+  }));
+};
+
+// Events and compliance functions
+export const getEventsByBusiness = (business: BusinessWithAll) => {
+  return Array.from({ length: 10 }, (_, i) => ({
+    id: faker.string.uuid(),
+    title: faker.lorem.words(3),
+    description: faker.lorem.sentence(),
+    date: faker.date.future().toISOString().split('T')[0],
+    time: faker.date.future().toTimeString().slice(0, 5),
+    business: business === 'All' ? faker.helpers.arrayElement(['Fish', 'Honey', 'Mushrooms']) : business,
+    type: faker.helpers.arrayElement(['meeting', 'delivery', 'inspection', 'maintenance']),
+    status: faker.helpers.arrayElement(['upcoming', 'completed', 'cancelled']),
+  }));
+};
+
+export const getComplianceData = (business: BusinessWithAll) => {
+  return Array.from({ length: 15 }, (_, i) => ({
+    id: faker.string.uuid(),
+    documentName: faker.lorem.words(2),
+    type: faker.helpers.arrayElement(['license', 'certificate', 'permit', 'inspection']),
+    business: business === 'All' ? faker.helpers.arrayElement(['Fish', 'Honey', 'Mushrooms']) : business,
+    issueDate: faker.date.past().toISOString().split('T')[0],
+    expiryDate: faker.date.future().toISOString().split('T')[0],
+    status: faker.helpers.arrayElement(['valid', 'expiring', 'expired']),
+    authority: faker.company.name(),
+  }));
+};
+
+// Product calculation utilities
+export const calculateMarkup = (costPrice: number, sellingPrice: number): number => {
+  if (costPrice === 0) return 0;
+  return ((sellingPrice - costPrice) / costPrice) * 100;
+};
+
+export const calculateSellingPrice = (costPrice: number, markup: number): number => {
+  return costPrice * (1 + markup / 100);
+};
+
+// Export Customer type for external use
+export type { Customer };

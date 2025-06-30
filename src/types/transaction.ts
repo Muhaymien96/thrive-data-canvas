@@ -36,6 +36,11 @@ export interface Transaction {
   invoiceNumber?: string;
   invoiceGenerated?: boolean;
   invoiceDate?: string;
+  
+  // Payment tracking fields
+  paymentStatus?: 'paid' | 'pending' | 'overdue';
+  dueDate?: string;
+  amountPaid?: number;
 }
 
 export interface YocoTransaction {
@@ -84,6 +89,7 @@ export interface Invoice {
   status: 'draft' | 'sent' | 'paid' | 'overdue';
   paymentMethod?: PaymentMethod;
   notes?: string;
+  transactionId?: string; // Link to original transaction
 }
 
 export interface InvoiceItem {
@@ -105,6 +111,10 @@ export interface Customer {
   lastPurchase: string;
   invoicePreference: 'email' | 'print' | 'both';
   paymentTerms: number; // days
+  totalPurchases: number;
+  outstandingBalance: number;
+  creditLimit: number;
+  tags: string[];
 }
 
 export interface Supplier {
