@@ -227,7 +227,7 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
           <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <SupplierForm
               onClose={() => setShowForm(false)}
-              defaultBusiness={businessId}
+              businessId={businessId}
             />
           </div>
         </div>
@@ -235,6 +235,7 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
 
       {showPaymentDialog && selectedSupplier && (
         <SupplierPaymentDialog
+          isOpen={showPaymentDialog}
           supplier={selectedSupplier}
           onClose={() => {
             setShowPaymentDialog(false);

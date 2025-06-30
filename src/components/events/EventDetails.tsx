@@ -1,23 +1,14 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Calendar, Clock, MapPin, X, CheckSquare, Edit3, Trash2 } from 'lucide-react';
+import { EventForm } from './EventForm';
 import { EventChecklist } from './EventChecklist';
-import { CalendarIcon, MapPinIcon, ClockIcon, DollarSignIcon } from 'lucide-react';
-import { format } from 'date-fns';
-
-interface Event {
-  id: number;
-  name: string;
-  location: string;
-  date: string;
-  business: string;
-  marketCost: number;
-  totalRevenue: number;
-  notes?: string;
-  startTime?: string;
-  endTime?: string;
-}
+import { useUpdateEvent, useDeleteEvent } from '@/hooks/useEvents';
+import { toast } from '@/hooks/use-toast';
+import type { Event } from '@/types/database';
 
 interface EventDetailsProps {
   event: Event;
@@ -25,84 +16,226 @@ interface EventDetailsProps {
 }
 
 export const EventDetails = ({ event, onClose }: EventDetailsProps) => {
-  const profit = event.totalRevenue - event.marketCost;
-  const profitMargin = event.totalRevenue > 0 ? ((profit / event.totalRevenue) * 100) : 0;
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [showChecklist, setShowChecklist] = useState(false);
+  
+  const updateEventMutation = useUpdateEvent();
+  const deleteEventMutation = useDeleteEvent();
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'upcoming':
+        return 'bg-blue-100 text-blue-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'market':
+        return 'bg-purple-100 text-purple-800';
+      case 'meeting':
+        return 'bg-blue-100 text-blue-800';
+      case 'delivery':
+        return 'bg-orange-100 text-orange-800';
+      case 'inspection':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'maintenance':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-slate-100 text-slate-800';
+    }
+  };
+
+  const handleStatusUpdate = async (newStatus: 'upcoming' | 'completed' | 'cancelled') => {
+    try {
+      await updateEventMutation.mutateAsync({
+        id: event.id,
+        status: newStatus
+      });
+      toast({
+        title: "Event Updated",
+        description: `Event status changed to ${newStatus}`,
+      });
+    } catch (error) {
+      console.error('Error updating event status:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+      try {
+        await deleteEventMutation.mutateAsync(event.id);
+        toast({
+          title: "Event Deleted",
+          description: "The event has been successfully deleted",
+        });
+        onClose();
+      } catch (error) {
+        console.error('Error deleting event:', error);
+      }
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-ZA', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const formatTime = (timeString: string) => {
+    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-ZA', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  };
+
+  if (showEditForm) {
+    return (
+      <EventForm
+        event={event}
+        businessId={event.business_id}
+        onClose={() => setShowEditForm(false)}
+        onSave={() => {
+          setShowEditForm(false);
+          // Event will be refetched automatically due to query invalidation
+        }}
+      />
+    );
+  }
+
+  if (showChecklist) {
+    return (
+      <EventChecklist
+        event={event}
+        onClose={() => setShowChecklist(false)}
+      />
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">{event.name}</h3>
-        <Button variant="outline" size="sm" onClick={onClose}>
-          Close
-        </Button>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center space-x-2 text-sm">
-          <MapPinIcon className="h-4 w-4 text-slate-500" />
-          <span>{event.location}</span>
-        </div>
-
-        <div className="flex items-center space-x-2 text-sm">
-          <CalendarIcon className="h-4 w-4 text-slate-500" />
-          <span>{format(new Date(event.date), 'MMMM d, yyyy')}</span>
-        </div>
-
-        {(event.startTime || event.endTime) && (
-          <div className="flex items-center space-x-2 text-sm">
-            <ClockIcon className="h-4 w-4 text-slate-500" />
-            <span>
-              {event.startTime && event.endTime 
-                ? `${event.startTime} - ${event.endTime}`
-                : event.startTime || event.endTime}
-            </span>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center space-x-3 mb-2">
+              <CardTitle className="text-xl">{event.title}</CardTitle>
+              <Badge className={getStatusColor(event.status)}>
+                {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+              </Badge>
+              <Badge variant="outline" className={getTypeColor(event.type)}>
+                {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+              </Badge>
+            </div>
           </div>
-        )}
-
-        <div className="flex items-center space-x-2">
-          <Badge variant="outline">{event.business}</Badge>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-sm text-slate-600">Market Cost:</span>
-            <span className="font-medium text-red-600">R{event.marketCost.toFixed(2)}</span>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X size={16} />
+          </Button>
+        </CardHeader>
+        
+        <CardContent className="space-y-6">
+          {/* Event Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center space-x-3 text-gray-600">
+              <Calendar size={20} />
+              <div>
+                <p className="font-medium text-gray-900">{formatDate(event.date)}</p>
+                <p className="text-sm">Event Date</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3 text-gray-600">
+              <Clock size={20} />
+              <div>
+                <p className="font-medium text-gray-900">{formatTime(event.time)}</p>
+                <p className="text-sm">Event Time</p>
+              </div>
+            </div>
           </div>
-          
-          <div className="flex justify-between">
-            <span className="text-sm text-slate-600">Total Revenue:</span>
-            <span className="font-medium text-green-600">R{event.totalRevenue.toFixed(2)}</span>
-          </div>
-          
-          <div className="flex justify-between border-t pt-2">
-            <span className="text-sm font-medium">Net Profit:</span>
-            <span className={`font-bold ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              R{profit.toFixed(2)}
-            </span>
-          </div>
-          
-          <div className="flex justify-between">
-            <span className="text-sm text-slate-600">Profit Margin:</span>
-            <span className={`text-sm ${profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {profitMargin.toFixed(1)}%
-            </span>
-          </div>
-        </div>
-      </div>
 
-      {event.notes && (
-        <div className="pt-4 border-t">
-          <h4 className="text-sm font-medium mb-2">Notes:</h4>
-          <p className="text-sm text-slate-600">{event.notes}</p>
-        </div>
-      )}
+          {event.location && (
+            <div className="flex items-start space-x-3 text-gray-600">
+              <MapPin size={20} className="mt-1" />
+              <div>
+                <p className="font-medium text-gray-900">{event.location}</p>
+                <p className="text-sm">Location</p>
+              </div>
+            </div>
+          )}
 
-      {/* Event Checklist Section */}
-      <div className="pt-4 border-t">
-        <EventChecklist eventId={event.id} />
-      </div>
+          {event.description && (
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">Description</h4>
+              <p className="text-gray-600 whitespace-pre-wrap">{event.description}</p>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-2 pt-4 border-t">
+            <Button
+              onClick={() => setShowChecklist(true)}
+              variant="outline"
+              className="flex items-center space-x-2"
+            >
+              <CheckSquare size={16} />
+              <span>Checklist</span>
+            </Button>
+            
+            <Button
+              onClick={() => setShowEditForm(true)}
+              variant="outline"
+              className="flex items-center space-x-2"
+            >
+              <Edit3 size={16} />
+              <span>Edit</span>
+            </Button>
+            
+            <Button
+              onClick={handleDelete}
+              variant="outline"
+              className="flex items-center space-x-2 text-red-600 hover:text-red-700"
+            >
+              <Trash2 size={16} />
+              <span>Delete</span>
+            </Button>
+          </div>
+
+          {/* Status Management */}
+          {event.status !== 'completed' && event.status !== 'cancelled' && (
+            <div className="pt-4 border-t">
+              <h4 className="font-medium text-gray-900 mb-3">Update Status</h4>
+              <div className="flex space-x-2">
+                <Button
+                  onClick={() => handleStatusUpdate('completed')}
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700"
+                  disabled={updateEventMutation.isPending}
+                >
+                  Mark Completed
+                </Button>
+                <Button
+                  onClick={() => handleStatusUpdate('cancelled')}
+                  size="sm"
+                  variant="outline"
+                  className="text-red-600 hover:text-red-700"
+                  disabled={updateEventMutation.isPending}
+                >
+                  Cancel Event
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

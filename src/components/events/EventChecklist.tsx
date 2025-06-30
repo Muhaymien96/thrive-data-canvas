@@ -2,73 +2,82 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, CheckCircle, Circle, AlertCircle, Clock } from 'lucide-react';
+import { X, Plus, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
 import { useEventChecklists, useCreateEventChecklistItem, useUpdateEventChecklistItem, useDeleteEventChecklistItem } from '@/hooks/useEventChecklists';
-import type { EventChecklistItem } from '@/hooks/useEventChecklists';
+import { toast } from '@/hooks/use-toast';
+import type { Event } from '@/types/database';
 
 interface EventChecklistProps {
-  eventId: string;
-  businessId: string;
-  isMarketEvent?: boolean;
+  event: Event;
+  onClose: () => void;
 }
 
-const MARKET_PREPARATION_TEMPLATES = [
-  { title: 'Confirm inventory stock levels', priority: 'high' as const, description: 'Check all product quantities before market day' },
-  { title: 'Prepare display materials', priority: 'medium' as const, description: 'Banners, signs, and product displays' },
-  { title: 'Pack transportation supplies', priority: 'high' as const, description: 'Tables, chairs, cash float, POS system' },
-  { title: 'Confirm market stall booking', priority: 'high' as const, description: 'Double-check stall number and payment' },
-  { title: 'Weather contingency plan', priority: 'medium' as const, description: 'Prepare for rain/wind protection' },
-  { title: 'Staff briefing and scheduling', priority: 'medium' as const, description: 'Ensure all staff know their roles' },
-  { title: 'Price labels and signage', priority: 'low' as const, description: 'Clear pricing for all products' },
-  { title: 'Cash register and payment setup', priority: 'high' as const, description: 'Card reader, cash float, receipt printer' },
+const marketPreparationTemplates = [
+  { title: 'Setup market stall/display area', priority: 'high' as const, description: 'Arrange tables, chairs, and display materials' },
+  { title: 'Prepare product inventory', priority: 'high' as const, description: 'Count and organize products to bring' },
+  { title: 'Check weather forecast', priority: 'medium' as const, description: 'Plan for weather conditions and bring appropriate gear' },
+  { title: 'Prepare change float', priority: 'high' as const, description: 'Ensure adequate cash for making change' },
+  { title: 'Load transport vehicle', priority: 'medium' as const, description: 'Pack products and equipment efficiently' },
+  { title: 'Bring payment processing equipment', priority: 'high' as const, description: 'Card reader, receipt printer, etc.' },
+  { title: 'Pack marketing materials', priority: 'low' as const, description: 'Business cards, flyers, banners' },
+  { title: 'Prepare product price lists', priority: 'medium' as const, description: 'Clear pricing information for customers' }
 ];
 
-export const EventChecklist = ({ eventId, businessId, isMarketEvent = false }: EventChecklistProps) => {
+export const EventChecklist = ({ event, onClose }: EventChecklistProps) => {
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newItemTitle, setNewItemTitle] = useState('');
-  const [newItemDescription, setNewItemDescription] = useState('');
-  const [newItemPriority, setNewItemPriority] = useState<'low' | 'medium' | 'high'>('medium');
-  const [newItemDueDate, setNewItemDueDate] = useState('');
+  const [newItem, setNewItem] = useState({
+    title: '',
+    description: '',
+    priority: 'medium' as 'low' | 'medium' | 'high',
+    due_date: ''
+  });
 
-  const { data: checklistItems = [], isLoading, error } = useEventChecklists(eventId);
-  const createItem = useCreateEventChecklistItem();
-  const updateItem = useUpdateEventChecklistItem();
-  const deleteItem = useDeleteEventChecklistItem();
+  const { data: checklistItems = [], isLoading } = useEventChecklists(event.id);
+  const createItemMutation = useCreateEventChecklistItem();
+  const updateItemMutation = useUpdateEventChecklistItem();
+  const deleteItemMutation = useDeleteEventChecklistItem();
 
-  const handleAddItem = async () => {
-    if (!newItemTitle.trim()) return;
+  const handleCreateItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newItem.title.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a title for the checklist item",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
-      await createItem.mutateAsync({
-        event_id: eventId,
-        business_id: businessId,
-        title: newItemTitle,
-        description: newItemDescription || undefined,
-        priority: newItemPriority,
-        due_date: newItemDueDate || undefined,
+      await createItemMutation.mutateAsync({
+        event_id: event.id,
+        business_id: event.business_id,
+        title: newItem.title.trim(),
+        description: newItem.description.trim() || undefined,
+        priority: newItem.priority,
         completed: false,
+        due_date: newItem.due_date || undefined
       });
 
-      setNewItemTitle('');
-      setNewItemDescription('');
-      setNewItemPriority('medium');
-      setNewItemDueDate('');
+      setNewItem({ title: '', description: '', priority: 'medium', due_date: '' });
       setShowAddForm(false);
     } catch (error) {
       console.error('Error creating checklist item:', error);
     }
   };
 
-  const handleToggleComplete = async (item: EventChecklistItem) => {
+  const handleToggleComplete = async (itemId: string, completed: boolean) => {
     try {
-      await updateItem.mutateAsync({
-        id: item.id,
-        completed: !item.completed,
+      await updateItemMutation.mutateAsync({
+        id: itemId,
+        completed: completed
       });
     } catch (error) {
       console.error('Error updating checklist item:', error);
@@ -76,27 +85,46 @@ export const EventChecklist = ({ eventId, businessId, isMarketEvent = false }: E
   };
 
   const handleDeleteItem = async (itemId: string) => {
-    try {
-      await deleteItem.mutateAsync(itemId);
-    } catch (error) {
-      console.error('Error deleting checklist item:', error);
+    if (window.confirm('Are you sure you want to delete this checklist item?')) {
+      try {
+        await deleteItemMutation.mutateAsync(itemId);
+      } catch (error) {
+        console.error('Error deleting checklist item:', error);
+      }
     }
   };
 
-  const addMarketPreparationItems = async () => {
+  const addTemplateItems = async () => {
     try {
-      for (const template of MARKET_PREPARATION_TEMPLATES) {
-        await createItem.mutateAsync({
-          event_id: eventId,
-          business_id: businessId,
+      for (const template of marketPreparationTemplates) {
+        await createItemMutation.mutateAsync({
+          event_id: event.id,
+          business_id: event.business_id,
           title: template.title,
           description: template.description,
           priority: template.priority,
-          completed: false,
+          completed: false
         });
       }
+      toast({
+        title: "Template Added",
+        description: "Market preparation checklist has been added to your event",
+      });
     } catch (error) {
-      console.error('Error adding market preparation items:', error);
+      console.error('Error adding template items:', error);
+    }
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return <AlertTriangle size={14} className="text-red-500" />;
+      case 'medium':
+        return <Clock size={14} className="text-yellow-500" />;
+      case 'low':
+        return <CheckCircle2 size={14} className="text-green-500" />;
+      default:
+        return <Clock size={14} className="text-gray-500" />;
     }
   };
 
@@ -109,249 +137,228 @@ export const EventChecklist = ({ eventId, businessId, isMarketEvent = false }: E
       case 'low':
         return 'bg-green-100 text-green-800';
       default:
-        return 'bg-slate-100 text-slate-800';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return <AlertCircle size={14} className="text-red-600" />;
-      case 'medium':
-        return <Clock size={14} className="text-yellow-600" />;
-      case 'low':
-        return <Circle size={14} className="text-green-600" />;
-      default:
-        return <Circle size={14} className="text-slate-600" />;
-    }
-  };
-
-  // Sort items by priority (high -> medium -> low) and then by completion status
+  // Sort items by priority (high, medium, low) then by creation date
   const sortedItems = [...checklistItems].sort((a, b) => {
     const priorityOrder = { high: 3, medium: 2, low: 1 };
-    const aPriority = priorityOrder[a.priority];
-    const bPriority = priorityOrder[b.priority];
+    const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+    const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
     
     if (aPriority !== bPriority) {
-      return bPriority - aPriority;
+      return bPriority - aPriority; // Higher priority first
     }
     
-    // If same priority, put incomplete items first
-    if (a.completed !== b.completed) {
-      return a.completed ? 1 : -1;
-    }
-    
-    return 0;
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
   });
-
-  const completedCount = checklistItems.filter(item => item.completed).length;
-  const totalCount = checklistItems.length;
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <CheckCircle size={20} />
-            <span>Event Checklist</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-slate-600">Loading checklist...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <CheckCircle size={20} />
-            <span>Event Checklist</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-red-600">
-            Error loading checklist. Please try again.
-          </div>
-        </CardContent>
-      </Card>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+          <CardContent className="pt-6">
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p>Loading checklist...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <CheckCircle size={20} />
-            <span>Event Checklist</span>
-            {totalCount > 0 && (
-              <Badge variant="outline" className="ml-2">
-                {completedCount}/{totalCount} completed
-              </Badge>
-            )}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Event Checklist</CardTitle>
+            <p className="text-sm text-gray-600 mt-1">{event.title}</p>
           </div>
-          <div className="flex items-center space-x-2">
-            {isMarketEvent && checklistItems.length === 0 && (
-              <Button
-                onClick={addMarketPreparationItems}
-                size="sm"
-                variant="outline"
-                className="text-xs"
-              >
-                Add Market Prep
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X size={16} />
+          </Button>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {/* Template Addition */}
+          {checklistItems.length === 0 && (
+            <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg">
+              <h3 className="text-lg font-medium mb-2">No checklist items yet</h3>
+              <p className="text-gray-600 mb-4">Get started quickly with our market preparation template</p>
+              <Button onClick={addTemplateItems} className="mb-2">
+                Add Market Preparation Template
               </Button>
-            )}
-            <Button
-              onClick={() => setShowAddForm(true)}
-              size="sm"
-              className="flex items-center space-x-1"
-            >
-              <Plus size={14} />
-              <span>Add Item</span>
-            </Button>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        {showAddForm && (
-          <Card className="p-4 bg-slate-50">
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="title">Task Title</Label>
-                <Input
-                  id="title"
-                  value={newItemTitle}
-                  onChange={(e) => setNewItemTitle(e.target.value)}
-                  placeholder="Enter task title..."
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Description (optional)</Label>
-                <Input
-                  id="description"
-                  value={newItemDescription}
-                  onChange={(e) => setNewItemDescription(e.target.value)}
-                  placeholder="Additional details..."
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="priority">Priority</Label>
-                  <Select value={newItemPriority} onValueChange={setNewItemPriority}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="dueDate">Due Date (optional)</Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
-                    value={newItemDueDate}
-                    onChange={(e) => setNewItemDueDate(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  onClick={handleAddItem}
-                  disabled={!newItemTitle.trim() || createItem.isPending}
-                  size="sm"
-                >
-                  {createItem.isPending ? 'Adding...' : 'Add Task'}
-                </Button>
-                <Button
-                  onClick={() => setShowAddForm(false)}
-                  variant="outline"
-                  size="sm"
-                >
-                  Cancel
-                </Button>
-              </div>
+              <p className="text-sm text-gray-500">or create your own custom items below</p>
             </div>
-          </Card>
-        )}
+          )}
 
-        {sortedItems.length > 0 ? (
-          <div className="space-y-3">
-            {sortedItems.map((item) => (
-              <div
-                key={item.id}
-                className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${
-                  item.completed ? 'bg-green-50 border-green-200' : 'bg-white border-slate-200'
-                }`}
-              >
-                <Checkbox
-                  checked={item.completed}
-                  onCheckedChange={() => handleToggleComplete(item)}
-                  className="mt-1"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <h4 className={`font-medium ${item.completed ? 'line-through text-slate-500' : 'text-slate-900'}`}>
-                      {item.title}
-                    </h4>
-                    <div className="flex items-center space-x-1">
-                      {getPriorityIcon(item.priority)}
-                      <Badge className={`text-xs ${getPriorityColor(item.priority)}`}>
-                        {item.priority}
-                      </Badge>
+          {/* Add New Item Form */}
+          {showAddForm && (
+            <Card className="border-2 border-blue-200">
+              <CardContent className="pt-4">
+                <form onSubmit={handleCreateItem} className="space-y-4">
+                  <div>
+                    <Label htmlFor="title">Task Title *</Label>
+                    <Input
+                      id="title"
+                      value={newItem.title}
+                      onChange={(e) => setNewItem(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="Enter task title..."
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={newItem.description}
+                      onChange={(e) => setNewItem(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Additional details about this task..."
+                      rows={2}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="priority">Priority</Label>
+                      <Select 
+                        value={newItem.priority} 
+                        onValueChange={(value: 'high' | 'medium' | 'low') => 
+                          setNewItem(prev => ({ ...prev, priority: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="high">High Priority</SelectItem>
+                          <SelectItem value="medium">Medium Priority</SelectItem>
+                          <SelectItem value="low">Low Priority</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="due_date">Due Date</Label>
+                      <Input
+                        id="due_date"
+                        type="date"
+                        value={newItem.due_date}
+                        onChange={(e) => setNewItem(prev => ({ ...prev, due_date: e.target.value }))}
+                      />
                     </div>
                   </div>
-                  {item.description && (
-                    <p className={`text-sm ${item.completed ? 'text-slate-400' : 'text-slate-600'}`}>
-                      {item.description}
-                    </p>
-                  )}
-                  {item.due_date && (
-                    <p className="text-xs text-slate-400 mt-1">
-                      Due: {new Date(item.due_date).toLocaleDateString()}
-                    </p>
-                  )}
-                  {item.completed && item.completed_at && (
-                    <p className="text-xs text-green-600 mt-1">
-                      Completed: {new Date(item.completed_at).toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
-                <Button
-                  onClick={() => handleDeleteItem(item.id)}
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <Trash2 size={14} />
-                </Button>
-              </div>
+                  
+                  <div className="flex justify-end space-x-2">
+                    <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={createItemMutation.isPending}>
+                      {createItemMutation.isPending ? 'Adding...' : 'Add Item'}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Add New Item Button */}
+          {!showAddForm && (
+            <Button
+              onClick={() => setShowAddForm(true)}
+              variant="outline"
+              className="w-full"
+            >
+              <Plus size={16} className="mr-2" />
+              Add New Checklist Item
+            </Button>
+          )}
+
+          {/* Checklist Items */}
+          <div className="space-y-3">
+            {sortedItems.map((item) => (
+              <Card key={item.id} className={`${item.completed ? 'opacity-75' : ''}`}>
+                <CardContent className="pt-4">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      checked={item.completed}
+                      onCheckedChange={(checked) => 
+                        handleToggleComplete(item.id, checked as boolean)
+                      }
+                      className="mt-1"
+                    />
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className={`font-medium ${item.completed ? 'line-through text-gray-500' : ''}`}>
+                          {item.title}
+                        </h4>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="secondary" className={`text-xs ${getPriorityColor(item.priority)}`}>
+                            <div className="flex items-center space-x-1">
+                              {getPriorityIcon(item.priority)}
+                              <span className="capitalize">{item.priority}</span>
+                            </div>
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteItem(item.id)}
+                            className="text-red-500 hover:text-red-700 p-1"
+                          >
+                            <X size={14} />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {item.description && (
+                        <p className={`text-sm text-gray-600 mb-2 ${item.completed ? 'line-through' : ''}`}>
+                          {item.description}
+                        </p>
+                      )}
+                      
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        {item.due_date && (
+                          <span>Due: {new Date(item.due_date).toLocaleDateString()}</span>
+                        )}
+                        {item.completed_at && (
+                          <span>Completed: {new Date(item.completed_at).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-8 text-slate-500">
-            <CheckCircle size={48} className="mx-auto text-slate-300 mb-4" />
-            <p className="text-lg font-medium mb-2">No checklist items yet</p>
-            <p className="text-sm">
-              {isMarketEvent 
-                ? "Add market preparation tasks to stay organized for your event."
-                : "Add tasks to keep track of your event preparation."
-              }
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {/* Summary */}
+          {checklistItems.length > 0 && (
+            <Card className="bg-gray-50">
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Progress</span>
+                  <span>
+                    {checklistItems.filter(item => item.completed).length} of {checklistItems.length} completed
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${(checklistItems.filter(item => item.completed).length / checklistItems.length) * 100}%`
+                    }}
+                  ></div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };

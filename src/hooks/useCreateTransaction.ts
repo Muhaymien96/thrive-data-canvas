@@ -9,20 +9,41 @@ export const useCreateTransaction = () => {
   
   return useMutation({
     mutationFn: async (transactionData: TransactionInsert) => {
+      console.log('Creating transaction with data:', transactionData);
+
+      // Validate required fields
+      if (!transactionData.business_id) {
+        throw new Error('Business ID is required');
+      }
+
+      if (!transactionData.type) {
+        throw new Error('Transaction type is required');
+      }
+
+      if (transactionData.amount === null || transactionData.amount === undefined) {
+        throw new Error('Transaction amount is required');
+      }
+
       // Ensure required fields are present and valid payment_status
       const completeTransactionData = {
         ...transactionData,
         amount: transactionData.amount || 0,
         date: transactionData.date || new Date().toISOString().split('T')[0],
-        type: transactionData.type || 'sale',
+        type: transactionData.type,
         business_id: transactionData.business_id,
         // Ensure payment_status is one of the allowed values
         payment_status: ['paid', 'pending', 'overdue', 'partial'].includes(transactionData.payment_status || 'pending') 
           ? (transactionData.payment_status || 'pending')
-          : 'pending'
+          : 'pending',
+        // Handle employee fields for salary transactions
+        employee_id: transactionData.employee_id || null,
+        employee_name: transactionData.employee_name || null,
+        hourly_rate: transactionData.hourly_rate || null,
+        hours_worked: transactionData.hours_worked || null,
+        cost_type: transactionData.cost_type || null
       };
 
-      console.log('Creating transaction with data:', completeTransactionData);
+      console.log('Final transaction data being sent:', completeTransactionData);
 
       const { data, error } = await supabase
         .from('transactions')
@@ -32,6 +53,12 @@ export const useCreateTransaction = () => {
       
       if (error) {
         console.error('Error creating transaction:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
       return data;
@@ -41,16 +68,32 @@ export const useCreateTransaction = () => {
       queryClient.invalidateQueries({ queryKey: ['customer-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['supplier-transactions'] });
       console.log('Transaction created successfully:', data);
+      
+      const transactionType = data.type === 'salary' ? 'employee cost' : data.type;
       toast({
         title: "Transaction Created",
-        description: `Successfully created ${data.type} transaction for R${data.amount.toLocaleString()}`,
+        description: `Successfully created ${transactionType} transaction for R${data.amount.toLocaleString()}`,
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error creating transaction:', error);
+      
+      let errorMessage = "Failed to create transaction. Please check your inputs and try again.";
+      
+      // Handle specific error cases
+      if (error.message?.includes('violates check constraint')) {
+        if (error.message.includes('transactions_type_check')) {
+          errorMessage = "Invalid transaction type. Please select a valid type (sale, expense, salary, refund).";
+        }
+      } else if (error.message?.includes('not-null constraint')) {
+        errorMessage = "Missing required information. Please fill in all required fields.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to create transaction. Please check your inputs and try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     },

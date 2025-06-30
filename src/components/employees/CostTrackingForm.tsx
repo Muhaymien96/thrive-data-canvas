@@ -7,12 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
-import type { Employee, Transaction } from '@/types/database';
+import { useCreateTransaction } from '@/hooks/useCreateTransaction';
+import type { Employee } from '@/types/database';
 
 interface CostTrackingFormProps {
   employees: Employee[];
   onClose: () => void;
-  onSave: (transaction: Transaction) => void;
+  onSave?: () => void;
 }
 
 export const CostTrackingForm = ({ employees, onClose, onSave }: CostTrackingFormProps) => {
@@ -26,6 +27,7 @@ export const CostTrackingForm = ({ employees, onClose, onSave }: CostTrackingFor
     payment_method: 'bank_transfer' as const
   });
 
+  const createTransactionMutation = useCreateTransaction();
   const selectedEmployee = employees.find(emp => emp.id === formData.employee_id);
 
   const calculateAmount = () => {
@@ -38,27 +40,54 @@ export const CostTrackingForm = ({ employees, onClose, onSave }: CostTrackingFor
     return formData.amount;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedEmployee) return;
+    if (!selectedEmployee) {
+      console.error('No employee selected');
+      return;
+    }
 
-    const transaction: Partial<Transaction> = {
-      date: formData.date,
-      business_id: selectedEmployee.business_id,
-      type: 'employee_cost',
-      amount: calculateAmount(),
-      description: formData.description || `${formData.cost_type} payment for ${selectedEmployee.name}`,
-      customer_name: selectedEmployee.name,
-      payment_method: formData.payment_method,
-      employee_id: selectedEmployee.id,
-      employee_name: selectedEmployee.name,
-      cost_type: formData.cost_type,
-      hours_worked: formData.hours_worked,
-      hourly_rate: selectedEmployee.hourly_rate
-    };
+    const finalAmount = calculateAmount();
+    if (finalAmount <= 0) {
+      console.error('Amount must be greater than 0');
+      return;
+    }
 
-    onSave(transaction as Transaction);
+    console.log('Submitting employee cost transaction with data:', {
+      selectedEmployee,
+      formData,
+      finalAmount
+    });
+
+    try {
+      const transactionData = {
+        date: formData.date,
+        business_id: selectedEmployee.business_id,
+        type: 'salary' as const,
+        amount: finalAmount,
+        description: formData.description || `${formData.cost_type} payment for ${selectedEmployee.name}`,
+        customer_name: selectedEmployee.name,
+        payment_method: formData.payment_method,
+        payment_status: 'paid' as const,
+        employee_id: selectedEmployee.id,
+        employee_name: selectedEmployee.name,
+        cost_type: formData.cost_type,
+        hours_worked: formData.cost_type === 'wages' ? formData.hours_worked : null,
+        hourly_rate: formData.cost_type === 'wages' ? selectedEmployee.hourly_rate : null
+      };
+
+      console.log('Transaction data to be created:', transactionData);
+
+      await createTransactionMutation.mutateAsync(transactionData);
+      
+      if (onSave) {
+        onSave();
+      }
+      onClose();
+    } catch (error) {
+      console.error('Error creating employee cost transaction:', error);
+    }
   };
 
   return (
@@ -186,8 +215,11 @@ export const CostTrackingForm = ({ employees, onClose, onSave }: CostTrackingFor
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={!formData.employee_id}>
-                Record Cost
+              <Button 
+                type="submit" 
+                disabled={!formData.employee_id || createTransactionMutation.isPending}
+              >
+                {createTransactionMutation.isPending ? 'Recording...' : 'Record Cost'}
               </Button>
             </div>
           </form>
