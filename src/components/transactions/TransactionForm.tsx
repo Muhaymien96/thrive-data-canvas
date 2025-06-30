@@ -35,7 +35,8 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     supplier_id: transaction?.supplier_id || null,
     employee_id: transaction?.employee_id || null,
     hourly_rate: transaction?.hourly_rate || null,
-    hours_worked: transaction?.hours_worked || null
+    hours_worked: transaction?.hours_worked || null,
+    invoice_generated: transaction?.invoice_generated || false
   });
 
   const [showQuickAddCustomer, setShowQuickAddCustomer] = useState(false);
@@ -50,7 +51,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
 
   // Auto-calculate amount when product and quantity change
   useEffect(() => {
-    if (selectedProductId && quantity > 0) {
+    if (selectedProductId && selectedProductId !== 'none' && quantity > 0) {
       const selectedProduct = products.find(p => p.id === selectedProductId);
       if (selectedProduct) {
         const calculatedAmount = selectedProduct.price * quantity;
@@ -80,7 +81,8 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     // Prepare transaction data
     const transactionData = {
       ...formData,
-      business_id: businessId
+      business_id: businessId,
+      invoice_generated: Boolean(formData.invoice_generated)
     };
 
     // Clear unused fields based on transaction type
@@ -105,7 +107,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     }
 
     // Add product information to description if a product was selected
-    if (selectedProductId && quantity > 0) {
+    if (selectedProductId && selectedProductId !== 'none' && quantity > 0) {
       const selectedProduct = products.find(p => p.id === selectedProductId);
       if (selectedProduct) {
         const productInfo = `Product: ${selectedProduct.name}, Quantity: ${quantity}, Unit Price: R${selectedProduct.price}`;
@@ -131,7 +133,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     setFormData(prev => ({
       ...prev,
       supplier_id: supplierId,
-      customer_name: supplierName // Using customer_name field for supplier name for backward compatibility
+      customer_name: supplierName
     }));
     setShowQuickAddSupplier(false);
   };
@@ -150,7 +152,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     setFormData(prev => ({
       ...prev,
       supplier_id: supplierId,
-      customer_name: supplier?.name || '' // Using customer_name field for backward compatibility
+      customer_name: supplier?.name || ''
     }));
   };
 
@@ -159,14 +161,14 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     setFormData(prev => ({
       ...prev,
       employee_id: employeeId,
-      customer_name: employee?.name || '', // Store employee name for display
+      customer_name: employee?.name || '',
       hourly_rate: employee?.hourly_rate || null
     }));
   };
 
   const handleProductSelect = (productId: string) => {
     if (productId === 'none') {
-      setSelectedProductId('');
+      setSelectedProductId('none');
       setFormData(prev => ({
         ...prev,
         amount: 0,
@@ -191,7 +193,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
             <div>
               <Label htmlFor="type">Transaction Type</Label>
               <Select
-                value={formData.type}
+                value={formData.type || 'sale'}
                 onValueChange={(value) => {
                   setFormData(prev => ({ 
                     ...prev, 
@@ -205,7 +207,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                   }));
                   setShowQuickAddCustomer(false);
                   setShowQuickAddSupplier(false);
-                  setSelectedProductId('');
+                  setSelectedProductId('none');
                 }}
               >
                 <SelectTrigger>
@@ -244,7 +246,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
             )}
 
             {/* Quantity field - only show if product is selected */}
-            {selectedProductId && formData.type === 'sale' && (
+            {selectedProductId && selectedProductId !== 'none' && formData.type === 'sale' && (
               <div>
                 <Label htmlFor="quantity">Quantity</Label>
                 <Input
@@ -264,7 +266,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                 <Input
                   id="amount"
                   type="number"
-                  value={formData.amount}
+                  value={formData.amount || 0}
                   onChange={(e) => setFormData(prev => ({ ...prev, amount: Number(e.target.value) }))}
                   min="0"
                   step="0.01"
@@ -277,7 +279,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                 <Input
                   id="date"
                   type="date"
-                  value={formData.date}
+                  value={formData.date || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
                   required
                 />
@@ -300,13 +302,14 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                   </Button>
                 </div>
                 <Select
-                  value={formData.customer_id || ''}
-                  onValueChange={handleCustomerSelect}
+                  value={formData.customer_id || 'none'}
+                  onValueChange={(value) => value !== 'none' && handleCustomerSelect(value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select customer or add new" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">No customer selected</SelectItem>
                     {customers.map((customer) => (
                       <SelectItem key={customer.id} value={customer.id}>
                         {customer.name} {customer.email && `(${customer.email})`}
@@ -333,13 +336,14 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                   </Button>
                 </div>
                 <Select
-                  value={formData.supplier_id || ''}
-                  onValueChange={handleSupplierSelect}
+                  value={formData.supplier_id || 'none'}
+                  onValueChange={(value) => value !== 'none' && handleSupplierSelect(value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select supplier or add new" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">No supplier selected</SelectItem>
                     {suppliers.map((supplier) => (
                       <SelectItem key={supplier.id} value={supplier.id}>
                         {supplier.name} {supplier.category && `(${supplier.category})`}
@@ -356,13 +360,14 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                 <div>
                   <Label>Employee</Label>
                   <Select
-                    value={formData.employee_id || ''}
-                    onValueChange={handleEmployeeSelect}
+                    value={formData.employee_id || 'none'}
+                    onValueChange={(value) => value !== 'none' && handleEmployeeSelect(value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select employee" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">No employee selected</SelectItem>
                       {employees.map((employee) => (
                         <SelectItem key={employee.id} value={employee.id}>
                           {employee.name} {employee.position && `(${employee.position})`}
@@ -399,8 +404,11 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
               </>
             )}
 
-            {/* Generic Customer Name for Refunds or Manual Entry */}
-            {(formData.type === 'refund' || (!formData.customer_id && !formData.supplier_id && !formData.employee_id)) && (
+            {/* Generic Customer Name for manual entry */}
+            {(formData.type === 'refund' || 
+              (formData.type === 'sale' && !formData.customer_id) ||
+              (formData.type === 'expense' && !formData.supplier_id) ||
+              (formData.type === 'salary' && !formData.employee_id)) && (
               <div>
                 <Label htmlFor="customer_name">
                   {formData.type === 'expense' ? 'Supplier Name' : 
@@ -419,7 +427,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
               <div>
                 <Label htmlFor="payment_method">Payment Method</Label>
                 <Select
-                  value={formData.payment_method}
+                  value={formData.payment_method || 'cash'}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}
                 >
                   <SelectTrigger>
@@ -436,7 +444,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
               <div>
                 <Label htmlFor="payment_status">Payment Status</Label>
                 <Select
-                  value={formData.payment_status}
+                  value={formData.payment_status || 'pending'}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, payment_status: value }))}
                 >
                   <SelectTrigger>
@@ -456,7 +464,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                value={formData.description}
+                value={formData.description || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 rows={3}
                 placeholder="Transaction details..."
@@ -475,7 +483,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
         </CardContent>
       </Card>
 
-      {/* Quick Add Components - Rendered outside form to avoid nesting */}
+      {/* Quick Add Components */}
       {showQuickAddCustomer && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60]">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
