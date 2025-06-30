@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EventForm } from './EventForm';
-import { Plus, Calendar, Clock, MapPin } from 'lucide-react';
-import type { BusinessWithAll, Event } from '@/types/database';
+import { Plus, Calendar, Clock, MapPin, AlertTriangle } from 'lucide-react';
+import { useEvents } from '@/hooks/useEvents';
+import type { BusinessWithAll } from '@/types/database';
 
 interface EventsViewProps {
   selectedBusiness: BusinessWithAll;
@@ -12,7 +13,37 @@ interface EventsViewProps {
 
 export const EventsView = ({ selectedBusiness }: EventsViewProps) => {
   const [showForm, setShowForm] = useState(false);
-  const events: Event[] = [];
+  const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness.id;
+  const { data: events = [], isLoading, error } = useEvents(businessId);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-900">Events & Schedule</h2>
+        </div>
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Loading events...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-900">Events & Schedule</h2>
+        </div>
+        <div className="text-center py-12">
+          <AlertTriangle size={48} className="mx-auto text-red-300 mb-4" />
+          <h3 className="text-lg font-medium text-slate-900 mb-2">Error Loading Events</h3>
+          <p className="text-slate-500">There was an error loading your events data.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -60,10 +91,12 @@ export const EventsView = ({ selectedBusiness }: EventsViewProps) => {
                           <Clock size={12} />
                           <span>{event.date} at {event.time}</span>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <MapPin size={12} />
-                          <span>{event.location}</span>
-                        </div>
+                        {event.location && (
+                          <div className="flex items-center space-x-1">
+                            <MapPin size={12} />
+                            <span>{event.location}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

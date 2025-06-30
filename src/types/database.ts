@@ -21,53 +21,71 @@ export type ProductInsert = Database['public']['Tables']['products']['Insert'];
 export type EmployeeInsert = Database['public']['Tables']['employees']['Insert'];
 export type SupplierInsert = Database['public']['Tables']['suppliers']['Insert'];
 
-// Stock movement type (will be added to database later)
-export interface StockMovement {
+// New database types
+export interface ComplianceItem {
   id: string;
-  productId: string;
-  productName: string;
-  type: 'in' | 'out' | 'adjustment';
-  quantity: number;
-  date: string;
-  reason: string;
-  reference?: string;
+  business_id: string;
+  title: string;
+  description?: string;
+  status: 'pending' | 'completed' | 'overdue';
+  due_date?: string;
+  priority: 'low' | 'medium' | 'high';
+  created_at: string;
+  updated_at: string;
 }
 
-// Invoice types (will be added to database later)
+export interface Event {
+  id: string;
+  business_id: string;
+  title: string;
+  description?: string;
+  date: string;
+  time: string;
+  location?: string;
+  type: 'meeting' | 'delivery' | 'inspection' | 'maintenance' | 'market';
+  status: 'upcoming' | 'completed' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StockMovement {
+  id: string;
+  product_id: string;
+  business_id: string;
+  type: 'in' | 'out' | 'adjustment';
+  quantity: number;
+  reason: string;
+  reference?: string;
+  date: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Invoice {
   id: string;
-  invoiceNumber: string;
-  customerId: string;
-  customerName: string;
-  businessId: string;
-  issueDate: string;
-  dueDate: string;
+  invoice_number: string;
+  customer_id?: string;
+  customer_name: string;
+  business_id: string;
+  issue_date: string;
+  due_date?: string;
   subtotal: number;
   tax: number;
   total: number;
   status: 'draft' | 'sent' | 'paid' | 'overdue';
-  items: InvoiceItem[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface InvoiceItem {
   id: string;
+  invoice_id: string;
   description: string;
   quantity: number;
-  unitPrice: number;
+  unit_price: number;
   total: number;
-}
-
-// Event types (will be added to database later)
-export interface Event {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  location: string;
-  businessId: string;
-  type: 'meeting' | 'delivery' | 'inspection' | 'maintenance' | 'market';
-  status: 'upcoming' | 'completed' | 'cancelled';
+  created_at: string;
+  updated_at: string;
 }
 
 // Dashboard data types

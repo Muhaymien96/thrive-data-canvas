@@ -5,26 +5,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { InvoiceForm } from './InvoiceForm';
-import { FileText, Plus, Search } from 'lucide-react';
-import type { Invoice } from '@/types/database';
+import { FileText, Plus, Search, AlertTriangle } from 'lucide-react';
+import { useInvoices } from '@/hooks/useInvoices';
+import type { BusinessWithAll } from '@/types/database';
 
-export const InvoiceManagement = () => {
+interface InvoiceManagementProps {
+  selectedBusiness: BusinessWithAll;
+}
+
+export const InvoiceManagement = ({ selectedBusiness }: InvoiceManagementProps) => {
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-
-  const handleSaveInvoice = (invoiceData: any) => {
-    const newInvoice: Invoice = {
-      id: Date.now().toString(),
-      ...invoiceData,
-      businessId: 'default',
-      customerId: 'default',
-      status: 'draft' as const
-    };
-    
-    setInvoices([...invoices, newInvoice]);
-    setShowForm(false);
-  };
+  const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness.id;
+  const { data: invoices = [], isLoading, error } = useInvoices(businessId);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -42,9 +35,38 @@ export const InvoiceManagement = () => {
   };
 
   const filteredInvoices = invoices.filter(invoice =>
-    invoice.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    invoice.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-900">Invoice Management</h2>
+        </div>
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Loading invoices...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-900">Invoice Management</h2>
+        </div>
+        <div className="text-center py-12">
+          <AlertTriangle size={48} className="mx-auto text-red-300 mb-4" />
+          <h3 className="text-lg font-medium text-slate-900 mb-2">Error Loading Invoices</h3>
+          <p className="text-slate-500">There was an error loading your invoice data.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -64,7 +86,7 @@ export const InvoiceManagement = () => {
           <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <InvoiceForm 
               onClose={() => setShowForm(false)} 
-              onSave={handleSaveInvoice}
+              onSave={() => setShowForm(false)}
             />
           </div>
         </div>
@@ -105,10 +127,10 @@ export const InvoiceManagement = () => {
                 <tbody>
                   {filteredInvoices.map((invoice) => (
                     <tr key={invoice.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="py-3 px-4 text-sm font-medium">{invoice.invoiceNumber}</td>
-                      <td className="py-3 px-4 text-sm">{invoice.customerName}</td>
-                      <td className="py-3 px-4 text-sm">{invoice.issueDate}</td>
-                      <td className="py-3 px-4 text-sm">{invoice.dueDate || 'N/A'}</td>
+                      <td className="py-3 px-4 text-sm font-medium">{invoice.invoice_number}</td>
+                      <td className="py-3 px-4 text-sm">{invoice.customer_name}</td>
+                      <td className="py-3 px-4 text-sm">{invoice.issue_date}</td>
+                      <td className="py-3 px-4 text-sm">{invoice.due_date || 'N/A'}</td>
                       <td className="py-3 px-4 text-sm font-medium">R{invoice.total.toLocaleString()}</td>
                       <td className="py-3 px-4 text-sm">
                         <Badge className={`text-xs ${getStatusColor(invoice.status)}`}>

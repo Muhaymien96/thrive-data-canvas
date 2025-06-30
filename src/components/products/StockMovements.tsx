@@ -2,16 +2,17 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Package, Activity } from 'lucide-react';
-import type { BusinessWithAll, StockMovement } from '@/types/database';
+import { TrendingUp, TrendingDown, Package, Activity, AlertTriangle } from 'lucide-react';
+import { useStockMovements } from '@/hooks/useStockMovements';
+import type { BusinessWithAll } from '@/types/database';
 
 interface StockMovementsProps {
   selectedBusiness: BusinessWithAll;
 }
 
 export const StockMovements = ({ selectedBusiness }: StockMovementsProps) => {
-  // Mock data for now - will be replaced with real data when stock_movements table is added
-  const movements: StockMovement[] = [];
+  const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness.id;
+  const { data: movements = [], isLoading, error } = useStockMovements(businessId);
   
   const getMovementIcon = (type: string) => {
     switch (type) {
@@ -39,6 +40,45 @@ export const StockMovements = ({ selectedBusiness }: StockMovementsProps) => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Activity size={20} />
+            <span>Stock Movement History</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-slate-600">Loading stock movements...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Activity size={20} />
+            <span>Stock Movement History</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12">
+            <AlertTriangle size={48} className="mx-auto text-red-300 mb-4" />
+            <h3 className="text-lg font-medium text-slate-900 mb-2">Error Loading Stock Movements</h3>
+            <p className="text-slate-500">There was an error loading your stock movement data.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -59,7 +99,7 @@ export const StockMovements = ({ selectedBusiness }: StockMovementsProps) => {
                   {getMovementIcon(movement.type)}
                   <div>
                     <div className="font-medium text-slate-900">
-                      {movement.productName}
+                      {movement.products?.name || 'Unknown Product'}
                     </div>
                     <div className="text-sm text-slate-500">
                       {movement.reason}

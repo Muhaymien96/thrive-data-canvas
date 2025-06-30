@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, CheckCircle, Clock, FileText } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Clock, FileText, Plus } from 'lucide-react';
+import { useComplianceItems } from '@/hooks/useCompliance';
 import type { BusinessWithAll } from '@/types/database';
 
 interface ComplianceViewProps {
@@ -11,32 +12,9 @@ interface ComplianceViewProps {
 }
 
 export const ComplianceView = ({ selectedBusiness }: ComplianceViewProps) => {
-  const complianceItems = [
-    {
-      id: '1',
-      title: 'Tax Returns Filing',
-      description: 'Annual tax returns for the current fiscal year',
-      status: 'pending',
-      dueDate: '2024-02-28',
-      priority: 'high'
-    },
-    {
-      id: '2',
-      title: 'VAT Registration',
-      description: 'Register for VAT if annual turnover exceeds R1 million',
-      status: 'completed',
-      dueDate: '2023-12-31',
-      priority: 'medium'
-    },
-    {
-      id: '3',
-      title: 'PAYE Submissions',
-      description: 'Monthly PAYE submissions to SARS',
-      status: 'overdue',
-      dueDate: '2024-01-31',
-      priority: 'high'
-    }
-  ];
+  const [showForm, setShowForm] = useState(false);
+  const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness.id;
+  const { data: complianceItems = [], isLoading, error } = useComplianceItems(businessId);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -77,12 +55,44 @@ export const ComplianceView = ({ selectedBusiness }: ComplianceViewProps) => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-900">Compliance Management</h2>
+        </div>
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Loading compliance items...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-900">Compliance Management</h2>
+        </div>
+        <div className="text-center py-12">
+          <AlertTriangle size={48} className="mx-auto text-red-300 mb-4" />
+          <h3 className="text-lg font-medium text-slate-900 mb-2">Error Loading Compliance Items</h3>
+          <p className="text-slate-500">There was an error loading your compliance data.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-slate-900">Compliance Management</h2>
-        <Button className="flex items-center space-x-2">
-          <FileText size={16} />
+        <Button 
+          onClick={() => setShowForm(true)}
+          className="flex items-center space-x-2"
+        >
+          <Plus size={16} />
           <span>Add Compliance Item</span>
         </Button>
       </div>
@@ -137,34 +147,50 @@ export const ComplianceView = ({ selectedBusiness }: ComplianceViewProps) => {
           <CardTitle>Compliance Items</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {complianceItems.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50"
-              >
-                <div className="flex items-center space-x-4">
-                  {getStatusIcon(item.status)}
-                  <div>
-                    <div className="font-medium text-slate-900">{item.title}</div>
-                    <div className="text-sm text-slate-500">{item.description}</div>
-                    <div className="text-xs text-slate-400 mt-1">
-                      Due: {item.dueDate}
+          {complianceItems.length > 0 ? (
+            <div className="space-y-4">
+              {complianceItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50"
+                >
+                  <div className="flex items-center space-x-4">
+                    {getStatusIcon(item.status)}
+                    <div>
+                      <div className="font-medium text-slate-900">{item.title}</div>
+                      <div className="text-sm text-slate-500">{item.description}</div>
+                      {item.due_date && (
+                        <div className="text-xs text-slate-400 mt-1">
+                          Due: {item.due_date}
+                        </div>
+                      )}
                     </div>
                   </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Badge className={`text-xs ${getPriorityColor(item.priority)}`}>
+                      {item.priority}
+                    </Badge>
+                    <Badge className={`text-xs ${getStatusColor(item.status)}`}>
+                      {item.status}
+                    </Badge>
+                  </div>
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Badge className={`text-xs ${getPriorityColor(item.priority)}`}>
-                    {item.priority}
-                  </Badge>
-                  <Badge className={`text-xs ${getStatusColor(item.status)}`}>
-                    {item.status}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FileText size={48} className="mx-auto text-slate-300 mb-4" />
+              <h3 className="text-lg font-medium text-slate-900 mb-2">No compliance items found</h3>
+              <p className="text-slate-500 mb-4">
+                Start by adding your first compliance item to track important deadlines and requirements.
+              </p>
+              <Button onClick={() => setShowForm(true)} className="flex items-center space-x-2">
+                <Plus size={16} />
+                <span>Add Your First Compliance Item</span>
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
