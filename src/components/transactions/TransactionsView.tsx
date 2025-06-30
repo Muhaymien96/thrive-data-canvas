@@ -8,6 +8,7 @@ import { CSVUpload } from './CSVUpload';
 import { YocoCSVUpload } from './YocoCSVUpload';
 import { InvoiceFromTransactionModal } from './InvoiceFromTransactionModal';
 import { useTransactions } from '@/hooks/useSupabaseData';
+import { useCreateTransaction } from '@/hooks/useCreateTransaction';
 import { Plus, Upload, CreditCard, FileText, Eye, Receipt } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import type { BusinessWithAll, Transaction } from '@/types/database';
@@ -25,13 +26,10 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
   
   const businessId = selectedBusiness === 'All' ? undefined : (typeof selectedBusiness === 'string' ? selectedBusiness : selectedBusiness.id);
   const { data: transactions = [], isLoading, error } = useTransactions(businessId);
+  const createTransaction = useCreateTransaction();
 
   const handleSaveTransaction = (transactionData: any) => {
-    console.log('Saving transaction:', transactionData);
-    toast({
-      title: "Transaction Saved",
-      description: "Transaction has been successfully saved.",
-    });
+    createTransaction.mutate(transactionData);
     setShowForm(false);
   };
 

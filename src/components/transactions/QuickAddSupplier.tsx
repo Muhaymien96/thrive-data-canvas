@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCreateSupplier } from '@/hooks/useSuppliers';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 
 interface QuickAddSupplierProps {
   businessId: string;
@@ -49,8 +49,14 @@ export const QuickAddSupplier = ({ businessId, onSupplierCreated, onCancel }: Qu
   };
 
   return (
-    <div className="border-t pt-4 mt-4">
-      <h4 className="font-medium mb-3">Quick Add Supplier</h4>
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="font-medium">Quick Add Supplier</h4>
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          <X size={16} />
+        </Button>
+      </div>
+      
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
           <Label htmlFor="supplier-name">Supplier Name *</Label>

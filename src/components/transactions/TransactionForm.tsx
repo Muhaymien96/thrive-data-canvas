@@ -187,14 +187,6 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                     ))}
                   </SelectContent>
                 </Select>
-
-                {showQuickAddCustomer && (
-                  <QuickAddCustomer
-                    businessId={businessId}
-                    onCustomerCreated={handleCustomerCreated}
-                    onCancel={() => setShowQuickAddCustomer(false)}
-                  />
-                )}
               </div>
             )}
 
@@ -228,14 +220,6 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                     ))}
                   </SelectContent>
                 </Select>
-
-                {showQuickAddSupplier && (
-                  <QuickAddSupplier
-                    businessId={businessId}
-                    onSupplierCreated={handleSupplierCreated}
-                    onCancel={() => setShowQuickAddSupplier(false)}
-                  />
-                )}
               </div>
             )}
 
@@ -312,6 +296,31 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
           </form>
         </CardContent>
       </Card>
+
+      {/* Quick Add Components - Rendered outside form to avoid nesting */}
+      {showQuickAddCustomer && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <QuickAddCustomer
+              businessId={businessId}
+              onCustomerCreated={handleCustomerCreated}
+              onCancel={() => setShowQuickAddCustomer(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {showQuickAddSupplier && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <QuickAddSupplier
+              businessId={businessId}
+              onSupplierCreated={handleSupplierCreated}
+              onCancel={() => setShowQuickAddSupplier(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
