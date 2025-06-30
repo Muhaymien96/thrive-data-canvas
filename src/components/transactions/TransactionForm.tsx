@@ -12,6 +12,7 @@ import { QuickAddSupplier } from './QuickAddSupplier';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useSuppliers } from '@/hooks/useSuppliers';
 import { useProducts } from '@/hooks/useProducts';
+import { useEmployees } from '@/hooks/useEmployees';
 import type { Transaction } from '@/types/database';
 
 interface TransactionFormProps {
@@ -31,7 +32,10 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     payment_method: transaction?.payment_method || 'cash',
     payment_status: transaction?.payment_status || 'pending',
     customer_id: transaction?.customer_id || null,
-    supplier_id: transaction?.supplier_id || null
+    supplier_id: transaction?.supplier_id || null,
+    employee_id: transaction?.employee_id || null,
+    hourly_rate: transaction?.hourly_rate || null,
+    hours_worked: transaction?.hours_worked || null
   });
 
   const [showQuickAddCustomer, setShowQuickAddCustomer] = useState(false);
@@ -42,6 +46,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
   const { data: customers = [] } = useCustomers(businessId);
   const { data: suppliers = [] } = useSuppliers(businessId);
   const { data: products = [] } = useProducts(businessId);
+  const { data: employees = [] } = useEmployees(businessId);
 
   // Auto-calculate amount when product and quantity change
   useEffect(() => {
@@ -58,6 +63,17 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     }
   }, [selectedProductId, quantity, products]);
 
+  // Auto-calculate amount for salary transactions
+  useEffect(() => {
+    if (formData.type === 'salary' && formData.hourly_rate && formData.hours_worked) {
+      const calculatedAmount = formData.hourly_rate * formData.hours_worked;
+      setFormData(prev => ({
+        ...prev,
+        amount: calculatedAmount
+      }));
+    }
+  }, [formData.hourly_rate, formData.hours_worked, formData.type]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -70,8 +86,22 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     // Clear unused fields based on transaction type
     if (formData.type === 'sale') {
       transactionData.supplier_id = null;
+      transactionData.employee_id = null;
+      transactionData.hourly_rate = null;
+      transactionData.hours_worked = null;
     } else if (formData.type === 'expense') {
       transactionData.customer_id = null;
+      transactionData.employee_id = null;
+      transactionData.hourly_rate = null;
+      transactionData.hours_worked = null;
+    } else if (formData.type === 'salary') {
+      transactionData.customer_id = null;
+      transactionData.supplier_id = null;
+    } else if (formData.type === 'refund') {
+      transactionData.supplier_id = null;
+      transactionData.employee_id = null;
+      transactionData.hourly_rate = null;
+      transactionData.hours_worked = null;
     }
 
     // Add product information to description if a product was selected
@@ -124,15 +154,26 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
     }));
   };
 
+  const handleEmployeeSelect = (employeeId: string) => {
+    const employee = employees.find(e => e.id === employeeId);
+    setFormData(prev => ({
+      ...prev,
+      employee_id: employeeId,
+      customer_name: employee?.name || '', // Store employee name for display
+      hourly_rate: employee?.hourly_rate || null
+    }));
+  };
+
   const handleProductSelect = (productId: string) => {
-    setSelectedProductId(productId);
-    if (!productId) {
-      // Clear amount and description if no product selected
+    if (productId === 'none') {
+      setSelectedProductId('');
       setFormData(prev => ({
         ...prev,
         amount: 0,
         description: ''
       }));
+    } else {
+      setSelectedProductId(productId);
     }
   };
 
@@ -157,7 +198,10 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                     type: value,
                     customer_id: null,
                     supplier_id: null,
-                    customer_name: ''
+                    employee_id: null,
+                    customer_name: '',
+                    hourly_rate: null,
+                    hours_worked: null
                   }));
                   setShowQuickAddCustomer(false);
                   setShowQuickAddSupplier(false);
@@ -170,24 +214,25 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                 <SelectContent>
                   <SelectItem value="sale">Sale</SelectItem>
                   <SelectItem value="expense">Expense</SelectItem>
+                  <SelectItem value="salary">Employee Salary</SelectItem>
                   <SelectItem value="refund">Refund</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Product Selection (Optional) */}
+            {/* Product Selection for Sales */}
             {formData.type === 'sale' && (
               <div>
                 <Label htmlFor="product">Product (Optional)</Label>
                 <Select
-                  value={selectedProductId}
+                  value={selectedProductId || 'none'}
                   onValueChange={handleProductSelect}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a product (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No product selected</SelectItem>
+                    <SelectItem value="none">No product selected</SelectItem>
                     {products.map((product) => (
                       <SelectItem key={product.id} value={product.id}>
                         {product.name} - R{product.price}
@@ -199,7 +244,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
             )}
 
             {/* Quantity field - only show if product is selected */}
-            {selectedProductId && (
+            {selectedProductId && formData.type === 'sale' && (
               <div>
                 <Label htmlFor="quantity">Quantity</Label>
                 <Input
@@ -224,6 +269,7 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
                   min="0"
                   step="0.01"
                   required
+                  disabled={formData.type === 'salary' && formData.hourly_rate && formData.hours_worked}
                 />
               </div>
               <div>
@@ -304,11 +350,61 @@ export const TransactionForm = ({ transaction, businessId, onClose, onSave }: Tr
               </div>
             )}
 
+            {/* Employee Selection for Salary */}
+            {formData.type === 'salary' && (
+              <>
+                <div>
+                  <Label>Employee</Label>
+                  <Select
+                    value={formData.employee_id || ''}
+                    onValueChange={handleEmployeeSelect}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select employee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees.map((employee) => (
+                        <SelectItem key={employee.id} value={employee.id}>
+                          {employee.name} {employee.position && `(${employee.position})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="hourly_rate">Hourly Rate (R)</Label>
+                    <Input
+                      id="hourly_rate"
+                      type="number"
+                      value={formData.hourly_rate || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, hourly_rate: Number(e.target.value) }))}
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="hours_worked">Hours Worked</Label>
+                    <Input
+                      id="hours_worked"
+                      type="number"
+                      value={formData.hours_worked || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, hours_worked: Number(e.target.value) }))}
+                      min="0"
+                      step="0.1"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* Generic Customer Name for Refunds or Manual Entry */}
-            {(formData.type === 'refund' || (!formData.customer_id && !formData.supplier_id)) && (
+            {(formData.type === 'refund' || (!formData.customer_id && !formData.supplier_id && !formData.employee_id)) && (
               <div>
                 <Label htmlFor="customer_name">
-                  {formData.type === 'expense' ? 'Supplier Name' : 'Customer Name'}
+                  {formData.type === 'expense' ? 'Supplier Name' : 
+                   formData.type === 'salary' ? 'Employee Name' : 'Customer Name'}
                 </Label>
                 <Input
                   id="customer_name"

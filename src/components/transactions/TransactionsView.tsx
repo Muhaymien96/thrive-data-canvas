@@ -9,7 +9,7 @@ import { YocoCSVUpload } from './YocoCSVUpload';
 import { InvoiceFromTransactionModal } from './InvoiceFromTransactionModal';
 import { useTransactions } from '@/hooks/useSupabaseData';
 import { useCreateTransaction } from '@/hooks/useCreateTransaction';
-import { Plus, Upload, CreditCard, FileText, Eye, Receipt, Package } from 'lucide-react';
+import { Plus, Upload, CreditCard, FileText, Eye, Receipt, Package, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import type { BusinessWithAll, Transaction } from '@/types/database';
 
@@ -70,8 +70,27 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
     }
   };
 
+  const getTransactionTypeColor = (type: string) => {
+    switch (type) {
+      case 'sale':
+        return 'default';
+      case 'expense':
+        return 'destructive';
+      case 'salary':
+        return 'secondary';
+      case 'refund':
+        return 'outline';
+      default:
+        return 'secondary';
+    }
+  };
+
   const hasProductInfo = (description: string) => {
     return description && description.includes('Product:');
+  };
+
+  const hasEmployeeInfo = (transaction: Transaction) => {
+    return transaction.type === 'salary' || transaction.employee_id;
   };
 
   if (selectedBusiness === 'All') {
@@ -204,8 +223,8 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Date</th>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Type</th>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Amount</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-600">Customer/Supplier</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-600">Product</th>
+                    <th className="text-left py-3 px-4 font-medium text-slate-600">Customer/Supplier/Employee</th>
+                    <th className="text-left py-3 px-4 font-medium text-slate-600">Product/Service</th>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Status</th>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Invoice</th>
                     <th className="text-left py-3 px-4 font-medium text-slate-600">Actions</th>
@@ -216,8 +235,8 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
                     <tr key={transaction.id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="py-3 px-4 text-sm">{transaction.date}</td>
                       <td className="py-3 px-4 text-sm">
-                        <Badge variant={transaction.type === 'sale' ? 'default' : transaction.type === 'expense' ? 'destructive' : 'secondary'}>
-                          {transaction.type}
+                        <Badge variant={getTransactionTypeColor(transaction.type)}>
+                          {transaction.type === 'salary' ? 'Employee Salary' : transaction.type}
                         </Badge>
                       </td>
                       <td className="py-3 px-4 text-sm font-medium">
@@ -226,10 +245,13 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
                       <td className="py-3 px-4 text-sm">
                         {transaction.customer_name || 'N/A'}
                         {transaction.customer_id && (
-                          <Badge variant="outline" className="ml-2 text-xs">Linked</Badge>
+                          <Badge variant="outline" className="ml-2 text-xs">Customer Linked</Badge>
                         )}
                         {transaction.supplier_id && (
-                          <Badge variant="outline" className="ml-2 text-xs">Linked</Badge>
+                          <Badge variant="outline" className="ml-2 text-xs">Supplier Linked</Badge>
+                        )}
+                        {transaction.employee_id && (
+                          <Badge variant="outline" className="ml-2 text-xs">Employee Linked</Badge>
                         )}
                       </td>
                       <td className="py-3 px-4 text-sm">
@@ -237,6 +259,14 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
                           <div className="flex items-center">
                             <Package size={14} className="mr-1 text-blue-600" />
                             <Badge variant="outline" className="text-xs">Product Sale</Badge>
+                          </div>
+                        ) : hasEmployeeInfo(transaction) ? (
+                          <div className="flex items-center">
+                            <User size={14} className="mr-1 text-purple-600" />
+                            <Badge variant="outline" className="text-xs">
+                              Salary Payment
+                              {transaction.hours_worked && ` (${transaction.hours_worked}h)`}
+                            </Badge>
                           </div>
                         ) : (
                           <span className="text-slate-400 text-xs">Ad-hoc</span>
