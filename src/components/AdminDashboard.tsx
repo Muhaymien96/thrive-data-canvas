@@ -12,6 +12,7 @@ import { EventsView } from '@/components/events/EventsView';
 import { ComplianceView } from '@/components/compliance/ComplianceView';
 import { EmployeesView } from '@/components/employees/EmployeesView';
 import { BusinessManagementView } from '@/components/business/BusinessManagementView';
+import { BusinessOnboarding } from '@/components/business/BusinessOnboarding';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBusinesses } from '@/hooks/useSupabaseData';
 import { Button } from '@/components/ui/button';
@@ -25,11 +26,37 @@ export const AdminDashboard = () => {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user, logout } = useAuth();
-  const { data: businesses } = useBusinesses();
+  const { data: businesses = [], isLoading, refetch } = useBusinesses();
 
+  // Show loading state while fetching businesses
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Loading your businesses...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show onboarding if user has no businesses
+  if (businesses.length === 0) {
+    return (
+      <BusinessOnboarding 
+        onBusinessCreated={() => {
+          refetch();
+        }}
+      />
+    );
+  }
+
+  // Auto-select business logic
   React.useEffect(() => {
-    if (businesses && businesses.length > 0 && selectedBusiness === 'All') {
+    if (businesses.length === 1 && selectedBusiness === 'All') {
       setSelectedBusiness(businesses[0]);
+    } else if (businesses.length > 1 && selectedBusiness !== 'All' && !businesses.find(b => b.id === (selectedBusiness as any)?.id)) {
+      setSelectedBusiness('All');
     }
   }, [businesses, selectedBusiness]);
 

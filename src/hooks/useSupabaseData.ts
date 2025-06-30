@@ -27,7 +27,7 @@ export const useTransactions = (businessId?: string) => {
         .select('*')
         .order('date', { ascending: false });
       
-      if (businessId && businessId !== 'All') {
+      if (businessId) {
         query = query.eq('business_id', businessId);
       }
       
@@ -48,7 +48,7 @@ export const useProducts = (businessId?: string) => {
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (businessId && businessId !== 'All') {
+      if (businessId) {
         query = query.eq('business_id', businessId);
       }
       
@@ -69,7 +69,7 @@ export const useSuppliers = (businessId?: string) => {
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (businessId && businessId !== 'All') {
+      if (businessId) {
         query = query.eq('business_id', businessId);
       }
       
@@ -90,7 +90,7 @@ export const useEmployees = (businessId?: string) => {
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (businessId && businessId !== 'All') {
+      if (businessId) {
         query = query.eq('business_id', businessId);
       }
       
@@ -112,8 +112,7 @@ export const useDashboardData = (selectedBusiness: BusinessWithAll) => {
         .eq('type', 'sale');
       
       if (selectedBusiness !== 'All') {
-        const businessId = typeof selectedBusiness === 'string' ? selectedBusiness : selectedBusiness.id;
-        transactionQuery = transactionQuery.eq('business_id', businessId);
+        transactionQuery = transactionQuery.eq('business_id', selectedBusiness.id);
       }
       
       const { data: transactions, error: transactionError } = await transactionQuery;
