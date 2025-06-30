@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Package, Clock, ShoppingCart, Edit } from 'lucide-react';
 import { getProductsByBusiness } from '@/lib/mockData';
-import type { Business } from '@/components/AdminDashboard';
+import type { BusinessWithAll } from '@/types/transaction';
 
 interface StockNotificationsProps {
-  selectedBusiness: Business;
+  selectedBusiness: BusinessWithAll;
 }
 
 export const StockNotifications = ({ selectedBusiness }: StockNotificationsProps) => {

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Upload, FileText, Download, Trash2, Eye, AlertTriangle, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import type { Business } from '@/components/AdminDashboard';
+import type { Business } from '@/types/transaction';
 
 interface ComplianceDocument {
   id: string;

@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getInvoicesByBusiness } from '@/lib/mockData';
 import { FileText, Download, Send, Eye } from 'lucide-react';
-import type { Business } from '@/components/AdminDashboard';
+import type { BusinessWithAll } from '@/types/transaction';
 
 interface InvoiceGeneratorProps {
-  selectedBusiness: Business;
+  selectedBusiness: BusinessWithAll;
 }
 
 export const InvoiceGenerator = ({ selectedBusiness }: InvoiceGeneratorProps) => {

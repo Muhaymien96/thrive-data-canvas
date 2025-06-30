@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getStockMovements, mockProducts } from '@/lib/mockData';
 import { TrendingUp, TrendingDown, Package } from 'lucide-react';
-import type { Business } from '@/components/AdminDashboard';
+import type { BusinessWithAll } from '@/types/transaction';
 
 interface StockMovementsProps {
-  selectedBusiness: Business;
+  selectedBusiness: BusinessWithAll;
 }
 
 export const StockMovements = ({ selectedBusiness }: StockMovementsProps) => {

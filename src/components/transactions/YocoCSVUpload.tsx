@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { X, Upload, AlertCircle, CheckCircle, CreditCard } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import type { YocoTransaction } from '@/types/transaction';
-import type { Business } from '@/components/AdminDashboard';
+import type { Business } from '@/types/transaction';
 
 interface YocoCSVUploadProps {
   onClose: () => void;

@@ -9,10 +9,10 @@ import { InvoiceGenerator } from './InvoiceGenerator';
 import { StockNotifications } from './StockNotifications';
 import { getProductsByBusiness } from '@/lib/mockData';
 import { Plus, Package, TrendingUp, FileText } from 'lucide-react';
-import type { Business } from '@/components/AdminDashboard';
+import type { BusinessWithAll } from '@/types/transaction';
 
 interface ProductsViewProps {
-  selectedBusiness: Business;
+  selectedBusiness: BusinessWithAll;
 }
 
 export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
@@ -140,7 +140,7 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <ProductForm 
               onClose={() => setShowForm(false)} 
-              defaultBusiness={selectedBusiness}
+              defaultBusiness={selectedBusiness === 'All' ? 'Fish' : selectedBusiness}
             />
           </div>
         </div>

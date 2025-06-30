@@ -7,11 +7,11 @@ import { EventForm } from './EventForm';
 import { EventDetails } from './EventDetails';
 import { getEventsByBusiness } from '@/lib/mockData';
 import { Plus, Calendar as CalendarIcon, TrendingUp, DollarSign } from 'lucide-react';
-import type { Business } from '@/components/AdminDashboard';
+import type { BusinessWithAll } from '@/types/transaction';
 import { format, isSameDay } from 'date-fns';
 
 interface EventsViewProps {
-  selectedBusiness: Business;
+  selectedBusiness: BusinessWithAll;
 }
 
 export const EventsView = ({ selectedBusiness }: EventsViewProps) => {
@@ -199,7 +199,7 @@ export const EventsView = ({ selectedBusiness }: EventsViewProps) => {
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <EventForm 
               onClose={() => setShowForm(false)} 
-              defaultBusiness={selectedBusiness}
+              defaultBusiness={selectedBusiness === 'All' ? 'Fish' : selectedBusiness}
               selectedDate={selectedDate}
             />
           </div>

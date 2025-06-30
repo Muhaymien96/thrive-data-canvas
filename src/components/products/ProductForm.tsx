@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { calculateMarkup, calculateSellingPrice } from '@/lib/mockData';
-import type { Business } from '@/components/AdminDashboard';
+import type { Business } from '@/types/transaction';
 
 const productSchema = z.object({
   name: z.string().min(2, 'Product name must be at least 2 characters'),

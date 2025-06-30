@@ -7,11 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Edit, AlertTriangle, Search } from 'lucide-react';
 import { ProductEditDialog } from './ProductEditDialog';
 import type { Product } from '@/lib/mockData';
-import type { Business } from '@/components/AdminDashboard';
+import type { BusinessWithAll } from '@/types/transaction';
 
 interface ProductTableProps {
   products: Product[];
-  selectedBusiness: Business;
+  selectedBusiness: BusinessWithAll;
 }
 
 export const ProductTable = ({ products }: ProductTableProps) => {

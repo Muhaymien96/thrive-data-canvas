@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getBusinessMetrics } from '@/lib/mockData';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import type { Business } from '@/components/AdminDashboard';
+import type { Business } from '@/types/transaction';
 
 interface BusinessViewProps {
   business: Business;
