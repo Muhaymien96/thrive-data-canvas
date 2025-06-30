@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, Plus } from 'lucide-react';
 import { useCreateBusiness } from '@/hooks/useSupabaseData';
 import { toast } from '@/hooks/use-toast';
@@ -12,6 +13,21 @@ import { toast } from '@/hooks/use-toast';
 interface BusinessOnboardingProps {
   onBusinessCreated: () => void;
 }
+
+const businessTypes = [
+  'Agriculture',
+  'Food & Beverage', 
+  'Technology',
+  'Manufacturing',
+  'Retail',
+  'Services',
+  'Healthcare',
+  'Education',
+  'Finance',
+  'Real Estate',
+  'Transportation',
+  'Other'
+];
 
 export const BusinessOnboarding = ({ onBusinessCreated }: BusinessOnboardingProps) => {
   const [formData, setFormData] = useState({
@@ -70,9 +86,9 @@ export const BusinessOnboarding = ({ onBusinessCreated }: BusinessOnboardingProp
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
             <Building2 className="h-6 w-6 text-blue-600" />
           </div>
-          <CardTitle className="text-2xl">Welcome to VentureHub</CardTitle>
+          <CardTitle className="text-2xl">Create Your Business</CardTitle>
           <p className="text-sm text-slate-600 mt-2">
-            Let's get started by creating your first business
+            Let's set up your business profile to get started
           </p>
         </CardHeader>
         <CardContent>
@@ -91,14 +107,21 @@ export const BusinessOnboarding = ({ onBusinessCreated }: BusinessOnboardingProp
             
             <div className="space-y-2">
               <Label htmlFor="type">Business Type *</Label>
-              <Input
-                id="type"
-                type="text"
+              <Select
                 value={formData.type}
-                onChange={(e) => handleInputChange('type', e.target.value)}
-                placeholder="e.g., Retail, Restaurant, Services"
-                required
-              />
+                onValueChange={(value) => handleInputChange('type', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select business type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {businessTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="space-y-2">

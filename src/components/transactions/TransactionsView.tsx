@@ -35,6 +35,15 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
     setShowForm(false);
   };
 
+  const handleTransactionsImported = (importedTransactions: Transaction[]) => {
+    console.log('Transactions imported:', importedTransactions);
+    toast({
+      title: "Transactions Imported",
+      description: `${importedTransactions.length} transactions have been imported successfully.`,
+    });
+    setShowYocoUpload(false);
+  };
+
   const handleGenerateInvoice = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
     setShowInvoiceModal(true);
@@ -130,10 +139,13 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
         </div>
       )}
 
-      {showYocoUpload && (
+      {showYocoUpload && businessId && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <YocoCSVUpload onClose={() => setShowYocoUpload(false)} />
+            <YocoCSVUpload 
+              onTransactionsImported={handleTransactionsImported}
+              businessId={businessId}
+            />
           </div>
         </div>
       )}
