@@ -11,12 +11,13 @@ import { ProductsView } from '@/components/products/ProductsView';
 import { EventsView } from '@/components/events/EventsView';
 import { ComplianceView } from '@/components/compliance/ComplianceView';
 import { EmployeesView } from '@/components/employees/EmployeesView';
+import { BusinessManagementView } from '@/components/business/BusinessManagementView';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
 import type { Business, BusinessWithAll } from '@/types/transaction';
 
-export type ViewType = 'dashboard' | 'transactions' | 'suppliers' | 'customers' | 'products' | 'events' | 'compliance' | 'employees';
+export type ViewType = 'dashboard' | 'transactions' | 'suppliers' | 'customers' | 'products' | 'events' | 'compliance' | 'employees' | 'business';
 
 export const AdminDashboard = () => {
   const [selectedBusiness, setSelectedBusiness] = useState<BusinessWithAll>('Fish');
@@ -44,6 +45,8 @@ export const AdminDashboard = () => {
         return <ComplianceView selectedBusiness={selectedBusiness} />;
       case 'employees':
         return <EmployeesView selectedBusiness={selectedBusiness} />;
+      case 'business':
+        return <BusinessManagementView selectedBusiness={selectedBusiness} />;
       default:
         return <DashboardOverview selectedBusiness={selectedBusiness} />;
     }

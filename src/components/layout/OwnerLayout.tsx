@@ -57,7 +57,7 @@ export const OwnerLayout = ({ currentView, onViewChange, children }: OwnerLayout
           <div className="p-4 border-b border-slate-200">
             <div className="flex items-center justify-between">
               {!sidebarCollapsed && (
-                <h1 className="text-xl font-bold text-slate-900">Executive Hub</h1>
+                <h1 className="text-xl font-bold text-slate-900">VentureHub Executive</h1>
               )}
               <Button
                 variant="ghost"
@@ -105,7 +105,7 @@ export const OwnerLayout = ({ currentView, onViewChange, children }: OwnerLayout
               {viewTitles[currentView]}
             </h1>
             <p className="text-sm text-slate-600 mt-1">
-              Executive dashboard for business performance
+              VentureHub executive dashboard for business performance
             </p>
           </div>
           <div className="flex items-center space-x-4">

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import {
   Calendar,
   FileText,
   UserCheck,
+  Building2,
   ArrowLeft,
   ArrowRight
 } from 'lucide-react';
@@ -29,6 +31,7 @@ const navigationItems = [
   { id: 'customers' as ViewType, label: 'Customers', icon: Users },
   { id: 'products' as ViewType, label: 'Products', icon: Package },
   { id: 'employees' as ViewType, label: 'Employees', icon: UserCheck },
+  { id: 'business' as ViewType, label: 'Business Management', icon: Building2 },
   { id: 'events' as ViewType, label: 'Events', icon: Calendar },
   { id: 'compliance' as ViewType, label: 'Compliance', icon: FileText },
 ];
@@ -48,7 +51,7 @@ export const Sidebar = ({ currentView, onViewChange, collapsed, onToggleCollapse
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center justify-between">
             {!collapsed && (
-              <h1 className="text-xl font-bold text-slate-900">BusinessHub</h1>
+              <h1 className="text-xl font-bold text-slate-900">VentureHub</h1>
             )}
             <Button
               variant="ghost"

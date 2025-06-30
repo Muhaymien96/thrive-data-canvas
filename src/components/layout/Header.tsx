@@ -27,6 +27,7 @@ const viewTitles: Record<ViewType, string> = {
   employees: 'Employees',
   events: 'Events',
   compliance: 'Compliance',
+  business: 'Business Management',
 };
 
 export const Header = ({ selectedBusiness, onBusinessChange, currentView }: HeaderProps) => {
@@ -37,7 +38,7 @@ export const Header = ({ selectedBusiness, onBusinessChange, currentView }: Head
       </h1>
       <div className="flex items-center space-x-4 mt-2">
         <p className="text-sm text-slate-600">
-          Manage your business operations efficiently
+          Manage your business operations efficiently with VentureHub
         </p>
         <div className="flex items-center space-x-2">
           <label htmlFor="business-select" className="text-sm font-medium text-slate-700">

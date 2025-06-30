@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,10 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Edit, Trash2, DollarSign } from 'lucide-react';
 import { EmployeeForm } from './EmployeeForm';
 import { CostTrackingForm } from './CostTrackingForm';
-import type { Employee, Business } from '@/types/transaction';
+import type { Employee, BusinessWithAll } from '@/types/transaction';
 
 interface EmployeesViewProps {
-  selectedBusiness: Business;
+  selectedBusiness: BusinessWithAll;
 }
 
 const mockEmployees: Employee[] = [
