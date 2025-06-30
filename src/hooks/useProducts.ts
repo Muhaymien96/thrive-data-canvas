@@ -34,7 +34,15 @@ export const useProducts = (businessId?: string) => {
         throw error;
       }
       
-      return data as ProductWithSupplier[];
+      // Transform the data to ensure proper typing
+      const transformedData = data?.map(product => ({
+        ...product,
+        variants: Array.isArray(product.variants) ? product.variants : [],
+        supplier: product.supplier || null,
+        parent_product: product.parent_product || null
+      })) || [];
+      
+      return transformedData as ProductWithSupplier[];
     },
     enabled: true,
   });
