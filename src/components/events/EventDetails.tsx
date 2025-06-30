@@ -102,7 +102,7 @@ export const EventDetails = ({ event, onClose }: EventDetailsProps) => {
   if (showEditForm) {
     return (
       <EventForm
-        businessId={event.business_id}
+        defaultBusiness={event.business_id}
         onClose={() => setShowEditForm(false)}
         onSave={() => {
           setShowEditForm(false);

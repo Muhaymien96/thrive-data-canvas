@@ -176,7 +176,7 @@ export const EventsView = ({ selectedBusiness }: EventsViewProps) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <EventForm 
-              businessId={businessId!}
+              defaultBusiness={businessId!}
               onClose={() => setShowForm(false)} 
               onSave={() => setShowForm(false)}
             />
