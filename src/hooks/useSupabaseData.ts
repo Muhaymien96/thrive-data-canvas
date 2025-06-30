@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { BusinessWithAll, DashboardData } from '@/types/database';
 
-// Businesses
 export const useBusinesses = () => {
   return useQuery({
     queryKey: ['businesses'],
@@ -19,7 +18,6 @@ export const useBusinesses = () => {
   });
 };
 
-// Transactions
 export const useTransactions = (businessId?: string) => {
   return useQuery({
     queryKey: ['transactions', businessId],
@@ -41,7 +39,6 @@ export const useTransactions = (businessId?: string) => {
   });
 };
 
-// Products
 export const useProducts = (businessId?: string) => {
   return useQuery({
     queryKey: ['products', businessId],
@@ -63,7 +60,6 @@ export const useProducts = (businessId?: string) => {
   });
 };
 
-// Suppliers
 export const useSuppliers = (businessId?: string) => {
   return useQuery({
     queryKey: ['suppliers', businessId],
@@ -85,7 +81,6 @@ export const useSuppliers = (businessId?: string) => {
   });
 };
 
-// Employees
 export const useEmployees = (businessId?: string) => {
   return useQuery({
     queryKey: ['employees', businessId],
@@ -107,12 +102,10 @@ export const useEmployees = (businessId?: string) => {
   });
 };
 
-// Dashboard data
 export const useDashboardData = (selectedBusiness: BusinessWithAll) => {
   return useQuery({
     queryKey: ['dashboard', selectedBusiness],
     queryFn: async (): Promise<DashboardData> => {
-      // Get transactions for revenue calculation
       let transactionQuery = supabase
         .from('transactions')
         .select('*')
@@ -127,9 +120,8 @@ export const useDashboardData = (selectedBusiness: BusinessWithAll) => {
       if (transactionError) throw transactionError;
       
       const currentRevenue = transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
-      const previousRevenue = currentRevenue * 0.85; // Mock previous period
+      const previousRevenue = currentRevenue * 0.85;
       
-      // Get business data for chart
       const { data: businesses, error: businessError } = await supabase
         .from('businesses')
         .select('*');
@@ -171,7 +163,6 @@ export const useDashboardData = (selectedBusiness: BusinessWithAll) => {
   });
 };
 
-// Create business mutation
 export const useCreateBusiness = () => {
   const queryClient = useQueryClient();
   

@@ -7,9 +7,9 @@ import { ProductTable } from './ProductTable';
 import { StockMovements } from './StockMovements';
 import { InvoiceGenerator } from './InvoiceGenerator';
 import { StockNotifications } from './StockNotifications';
-import { getProductsByBusiness } from '@/lib/mockData';
+import { useProducts } from '@/hooks/useSupabaseData';
 import { Plus, Package, TrendingUp, FileText } from 'lucide-react';
-import type { BusinessWithAll } from '@/types/transaction';
+import type { BusinessWithAll } from '@/types/database';
 
 interface ProductsViewProps {
   selectedBusiness: BusinessWithAll;
@@ -19,8 +19,29 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState<'products' | 'stock' | 'invoices'>('products');
   
-  const products = getProductsByBusiness(selectedBusiness);
-  const lowStockProducts = products.filter(p => p.currentStock <= p.minStockLevel);
+  const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness;
+  const { data: products = [], isLoading, error } = useProducts(businessId);
+  
+  const lowStockProducts = products.filter(p => 
+    (p.current_stock || 0) <= (p.min_stock_level || 0)
+  );
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-900">Product Management</h2>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center text-red-600">
+              Error loading products. Please try again later.
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -35,10 +56,8 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
         </Button>
       </div>
 
-      {/* Stock Notifications */}
       <StockNotifications selectedBusiness={selectedBusiness} />
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -74,7 +93,7 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
           <CardContent>
             <div className="text-2xl font-bold">
               {products.length > 0 
-                ? (products.reduce((sum, p) => sum + p.markupPercentage, 0) / products.length).toFixed(1)
+                ? (products.reduce((sum, p) => sum + (p.markup_percentage || 0), 0) / products.length).toFixed(1)
                 : 0}%
             </div>
             <p className="text-xs text-muted-foreground">
@@ -84,7 +103,6 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
         </Card>
       </div>
 
-      {/* Navigation Tabs */}
       <div className="flex space-x-4 border-b border-slate-200">
         <button
           onClick={() => setActiveTab('products')}
@@ -118,11 +136,11 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
         </button>
       </div>
 
-      {/* Content based on active tab */}
       {activeTab === 'products' && (
         <ProductTable 
           products={products} 
           selectedBusiness={selectedBusiness}
+          isLoading={isLoading}
         />
       )}
       
@@ -134,13 +152,12 @@ export const ProductsView = ({ selectedBusiness }: ProductsViewProps) => {
         <InvoiceGenerator selectedBusiness={selectedBusiness} />
       )}
 
-      {/* Product Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <ProductForm 
               onClose={() => setShowForm(false)} 
-              defaultBusiness={selectedBusiness === 'All' ? 'Fish' : selectedBusiness}
+              defaultBusiness={selectedBusiness === 'All' ? undefined : selectedBusiness}
             />
           </div>
         </div>

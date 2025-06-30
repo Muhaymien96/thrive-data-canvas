@@ -16,7 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useBusinesses } from '@/hooks/useSupabaseData';
 import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
-import type { BusinessWithAll } from '@/types/transaction';
+import type { BusinessWithAll } from '@/types/database';
 
 export type ViewType = 'dashboard' | 'transactions' | 'suppliers' | 'customers' | 'products' | 'events' | 'compliance' | 'employees' | 'business';
 
@@ -27,10 +27,9 @@ export const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const { data: businesses } = useBusinesses();
 
-  // Use the first business as default if available
   React.useEffect(() => {
     if (businesses && businesses.length > 0 && selectedBusiness === 'All') {
-      setSelectedBusiness(businesses[0].name as BusinessWithAll);
+      setSelectedBusiness(businesses[0].id as BusinessWithAll);
     }
   }, [businesses, selectedBusiness]);
 

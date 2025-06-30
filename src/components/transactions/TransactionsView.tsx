@@ -111,7 +111,6 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
         </div>
       </div>
 
-      {/* Transaction Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -123,7 +122,6 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
         </div>
       )}
 
-      {/* CSV Upload Modal */}
       {showCSVUpload && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -132,7 +130,6 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
         </div>
       )}
 
-      {/* Yoco Upload Modal */}
       {showYocoUpload && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -141,7 +138,6 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
         </div>
       )}
 
-      {/* Invoice Generation Modal */}
       {showInvoiceModal && selectedTransaction && (
         <InvoiceFromTransactionModal
           transaction={selectedTransaction}
@@ -161,7 +157,6 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
         />
       )}
 
-      {/* Transactions Table */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
