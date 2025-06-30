@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Business, BusinessWithAll } from '@/types/transaction';
+import type { BusinessWithAll, DashboardData } from '@/types/database';
 
 // Businesses
 export const useBusinesses = () => {
@@ -41,13 +41,13 @@ export const useTransactions = (businessId?: string) => {
   });
 };
 
-// Customers
-export const useCustomers = (businessId?: string) => {
+// Products
+export const useProducts = (businessId?: string) => {
   return useQuery({
-    queryKey: ['customers', businessId],
+    queryKey: ['products', businessId],
     queryFn: async () => {
       let query = supabase
-        .from('customers')
+        .from('products')
         .select('*')
         .order('created_at', { ascending: false });
       
@@ -70,28 +70,6 @@ export const useSuppliers = (businessId?: string) => {
     queryFn: async () => {
       let query = supabase
         .from('suppliers')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (businessId && businessId !== 'All') {
-        query = query.eq('business_id', businessId);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      return data || [];
-    },
-  });
-};
-
-// Products
-export const useProducts = (businessId?: string) => {
-  return useQuery({
-    queryKey: ['products', businessId],
-    queryFn: async () => {
-      let query = supabase
-        .from('products')
         .select('*')
         .order('created_at', { ascending: false });
       
@@ -133,7 +111,7 @@ export const useEmployees = (businessId?: string) => {
 export const useDashboardData = (selectedBusiness: BusinessWithAll) => {
   return useQuery({
     queryKey: ['dashboard', selectedBusiness],
-    queryFn: async () => {
+    queryFn: async (): Promise<DashboardData> => {
       // Get transactions for revenue calculation
       let transactionQuery = supabase
         .from('transactions')
@@ -178,7 +156,8 @@ export const useDashboardData = (selectedBusiness: BusinessWithAll) => {
       );
       
       const topBusiness = businessData.reduce((prev, current) => 
-        prev.revenue > current.revenue ? prev : current, businessData[0] || { name: '', revenue: 0, transactions: 0 }
+        prev.revenue > current.revenue ? prev : current, 
+        businessData[0] || { name: '', revenue: 0, transactions: 0 }
       );
       
       return {

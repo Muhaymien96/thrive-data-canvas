@@ -6,8 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { calculateMarkup, calculateSellingPrice } from '@/lib/mockData';
-import type { Product } from '@/lib/mockData';
+import type { Product } from '@/types/database';
 
 interface ProductEditDialogProps {
   product: Product | null;
@@ -20,26 +19,26 @@ export const ProductEditDialog = ({ product, open, onClose }: ProductEditDialogP
     name: '',
     category: '',
     unit: '',
-    costPrice: 0,
-    sellingPrice: 0,
-    currentStock: 0,
-    minStockLevel: 0,
-    supplier: '',
-    expiryDate: '',
+    cost: 0,
+    price: 0,
+    current_stock: 0,
+    min_stock_level: 0,
+    supplier_name: '',
+    expiry_date: '',
   });
 
   useEffect(() => {
     if (product) {
       setFormData({
         name: product.name,
-        category: product.category,
-        unit: product.unit,
-        costPrice: product.costPrice,
-        sellingPrice: product.sellingPrice,
-        currentStock: product.currentStock,
-        minStockLevel: product.minStockLevel,
-        supplier: product.supplier,
-        expiryDate: product.expiryDate || '',
+        category: product.category || '',
+        unit: product.unit || '',
+        cost: product.cost,
+        price: product.price,
+        current_stock: product.current_stock || 0,
+        min_stock_level: product.min_stock_level || 0,
+        supplier_name: product.supplier_name || '',
+        expiry_date: product.expiry_date || '',
       });
     }
   }, [product]);
@@ -48,10 +47,18 @@ export const ProductEditDialog = ({ product, open, onClose }: ProductEditDialogP
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const calculateMarkup = (cost: number, price: number): number => {
+    return cost > 0 ? ((price - cost) / cost) * 100 : 0;
+  };
+
+  const calculateSellingPrice = (cost: number, markupPercentage: number): number => {
+    return cost * (1 + markupPercentage / 100);
+  };
+
   const handleMarkupChange = (markupPercentage: number) => {
-    if (formData.costPrice) {
-      const newSellingPrice = calculateSellingPrice(formData.costPrice, markupPercentage);
-      setFormData(prev => ({ ...prev, sellingPrice: Math.round(newSellingPrice * 100) / 100 }));
+    if (formData.cost) {
+      const newSellingPrice = calculateSellingPrice(formData.cost, markupPercentage);
+      setFormData(prev => ({ ...prev, price: Math.round(newSellingPrice * 100) / 100 }));
     }
   };
 
@@ -66,31 +73,28 @@ export const ProductEditDialog = ({ product, open, onClose }: ProductEditDialogP
     onClose();
   };
 
-  const getUnitsForBusiness = (business: string) => {
-    switch (business) {
-      case 'Fish':
+  const getUnitsForCategory = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'seafood':
+      case 'fish':
         return ['kg', 'piece', 'box'];
-      case 'Honey':
+      case 'honey':
+      case 'natural products':
         return ['L', 'kg', 'jar'];
-      case 'Mushrooms':
+      case 'vegetables':
+      case 'mushrooms':
         return ['kg', 'box', 'punnet'];
       default:
-        return ['kg', 'L', 'piece', 'box'];
+        return ['kg', 'L', 'piece', 'box', 'jar', 'punnet'];
     }
   };
 
-  const getCategoriesForBusiness = (business: string) => {
-    switch (business) {
-      case 'Fish':
-        return ['Fresh Fish', 'Premium Fish', 'Seafood', 'Shellfish'];
-      case 'Honey':
-        return ['Raw Honey', 'Premium Honey', 'Flavored Honey', 'Comb Honey'];
-      case 'Mushrooms':
-        return ['Fresh Mushrooms', 'Exotic Mushrooms', 'Dried Mushrooms', 'Organic Mushrooms'];
-      default:
-        return ['General'];
-    }
-  };
+  const categories = [
+    'Seafood', 'Fresh Fish', 'Premium Fish', 'Shellfish',
+    'Raw Honey', 'Premium Honey', 'Flavored Honey', 'Comb Honey',
+    'Fresh Mushrooms', 'Exotic Mushrooms', 'Dried Mushrooms', 'Organic Mushrooms',
+    'Vegetables', 'Natural Products', 'Other'
+  ];
 
   if (!product) return null;
 
@@ -124,7 +128,7 @@ export const ProductEditDialog = ({ product, open, onClose }: ProductEditDialogP
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {getCategoriesForBusiness(product.business).map((category) => (
+                  {categories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
                     </SelectItem>
@@ -143,7 +147,7 @@ export const ProductEditDialog = ({ product, open, onClose }: ProductEditDialogP
                   <SelectValue placeholder="Select unit" />
                 </SelectTrigger>
                 <SelectContent>
-                  {getUnitsForBusiness(product.business).map((unit) => (
+                  {getUnitsForCategory(formData.category).map((unit) => (
                     <SelectItem key={unit} value={unit}>
                       {unit}
                     </SelectItem>
@@ -156,34 +160,34 @@ export const ProductEditDialog = ({ product, open, onClose }: ProductEditDialogP
               <Label htmlFor="supplier">Supplier</Label>
               <Input
                 id="supplier"
-                value={formData.supplier}
-                onChange={(e) => handleInputChange('supplier', e.target.value)}
+                value={formData.supplier_name}
+                onChange={(e) => handleInputChange('supplier_name', e.target.value)}
                 placeholder="Enter supplier name"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="costPrice">Cost Price (R) *</Label>
+              <Label htmlFor="cost">Cost Price (R) *</Label>
               <Input
-                id="costPrice"
+                id="cost"
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.costPrice}
-                onChange={(e) => handleInputChange('costPrice', parseFloat(e.target.value) || 0)}
+                value={formData.cost}
+                onChange={(e) => handleInputChange('cost', parseFloat(e.target.value) || 0)}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sellingPrice">Selling Price (R) *</Label>
+              <Label htmlFor="price">Selling Price (R) *</Label>
               <Input
-                id="sellingPrice"
+                id="price"
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.sellingPrice}
-                onChange={(e) => handleInputChange('sellingPrice', parseFloat(e.target.value) || 0)}
+                value={formData.price}
+                onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
                 required
               />
             </div>
@@ -219,47 +223,47 @@ export const ProductEditDialog = ({ product, open, onClose }: ProductEditDialogP
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="expiryDate">Expiry Date</Label>
+              <Label htmlFor="expiry_date">Expiry Date</Label>
               <Input
-                id="expiryDate"
+                id="expiry_date"
                 type="date"
-                value={formData.expiryDate}
-                onChange={(e) => handleInputChange('expiryDate', e.target.value)}
+                value={formData.expiry_date}
+                onChange={(e) => handleInputChange('expiry_date', e.target.value)}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="currentStock">Current Stock *</Label>
+              <Label htmlFor="current_stock">Current Stock *</Label>
               <Input
-                id="currentStock"
+                id="current_stock"
                 type="number"
                 min="0"
-                value={formData.currentStock}
-                onChange={(e) => handleInputChange('currentStock', parseInt(e.target.value) || 0)}
+                value={formData.current_stock}
+                onChange={(e) => handleInputChange('current_stock', parseInt(e.target.value) || 0)}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="minStockLevel">Minimum Stock Level *</Label>
+              <Label htmlFor="min_stock_level">Minimum Stock Level *</Label>
               <Input
-                id="minStockLevel"
+                id="min_stock_level"
                 type="number"
                 min="0"
-                value={formData.minStockLevel}
-                onChange={(e) => handleInputChange('minStockLevel', parseInt(e.target.value) || 0)}
+                value={formData.min_stock_level}
+                onChange={(e) => handleInputChange('min_stock_level', parseInt(e.target.value) || 0)}
                 required
               />
             </div>
           </div>
 
-          {formData.costPrice && formData.sellingPrice && (
+          {formData.cost && formData.price && (
             <div className="bg-slate-50 p-4 rounded-lg">
               <p className="text-sm text-slate-600">
-                Markup: <span className="font-medium">{calculateMarkup(formData.costPrice, formData.sellingPrice).toFixed(1)}%</span>
+                Markup: <span className="font-medium">{calculateMarkup(formData.cost, formData.price).toFixed(1)}%</span>
               </p>
               <p className="text-sm text-slate-600">
-                Profit per unit: <span className="font-medium">R{(formData.sellingPrice - formData.costPrice).toFixed(2)}</span>
+                Profit per unit: <span className="font-medium">R{(formData.price - formData.cost).toFixed(2)}</span>
               </p>
             </div>
           )}

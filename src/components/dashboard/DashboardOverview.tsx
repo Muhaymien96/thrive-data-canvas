@@ -2,37 +2,79 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { getMonthlyRevenue, getBusinessMetrics, mockTransactions } from '@/lib/mockData';
-import { ArrowUp, ArrowDown, TrendingUp } from 'lucide-react';
+import { useDashboardData } from '@/hooks/useSupabaseData';
+import { ArrowUp, ArrowDown, TrendingUp, BarChart3 } from 'lucide-react';
+import type { BusinessWithAll } from '@/types/database';
 
 interface DashboardOverviewProps {
-  selectedBusiness: string;
+  selectedBusiness: BusinessWithAll;
 }
 
 export const DashboardOverview = ({ selectedBusiness }: DashboardOverviewProps) => {
-  const currentRevenue = getMonthlyRevenue(selectedBusiness);
-  const previousRevenue = currentRevenue * 0.85; // Mock previous month data
-  const revenueChange = ((currentRevenue - previousRevenue) / previousRevenue * 100);
-  
-  // Business comparison data
-  const businessData = [
-    { name: 'Fish', revenue: getMonthlyRevenue('Fish'), transactions: getBusinessMetrics('Fish').transactionCount },
-    { name: 'Honey', revenue: getMonthlyRevenue('Honey'), transactions: getBusinessMetrics('Honey').transactionCount },
-    { name: 'Mushrooms', revenue: getMonthlyRevenue('Mushrooms'), transactions: getBusinessMetrics('Mushrooms').transactionCount },
-  ];
+  const { data: dashboardData, isLoading, error } = useDashboardData(selectedBusiness);
 
-  // Top performing business
-  const topBusiness = businessData.reduce((prev, current) => 
-    prev.revenue > current.revenue ? prev : current
-  );
-
-  // Expense breakdown (mock data)
+  // Expense breakdown (mock data for now)
   const expenseData = [
     { name: 'Supplies', value: 40, color: '#8B5CF6' },
     { name: 'Labor', value: 30, color: '#06B6D4' },
     { name: 'Marketing', value: 15, color: '#10B981' },
     { name: 'Operations', value: 15, color: '#F59E0B' },
   ];
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center text-red-600">
+              Error loading dashboard data. Please try again later.
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="pt-6">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-slate-200 rounded w-1/2 mb-2"></div>
+                  <div className="h-8 bg-slate-200 rounded w-3/4"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-12">
+              <BarChart3 size={48} className="mx-auto text-slate-300 mb-4" />
+              <h3 className="text-lg font-medium text-slate-900 mb-2">No data available</h3>
+              <p className="text-slate-500">
+                Start by adding transactions to see your business insights.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const revenueChange = dashboardData.previousRevenue > 0 
+    ? ((dashboardData.currentRevenue - dashboardData.previousRevenue) / dashboardData.previousRevenue * 100)
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -44,9 +86,9 @@ export const DashboardOverview = ({ selectedBusiness }: DashboardOverviewProps) 
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">
-              R{currentRevenue.toLocaleString()}
+              R{dashboardData.currentRevenue.toLocaleString()}
             </div>
-            <p className="text-xs text-slate-600 mt-1">This month</p>
+            <p className="text-xs text-slate-600 mt-1">This period</p>
           </CardContent>
         </Card>
 
@@ -57,14 +99,16 @@ export const DashboardOverview = ({ selectedBusiness }: DashboardOverviewProps) 
           <CardContent>
             <div className="flex items-center space-x-2">
               <div className="text-2xl font-bold text-slate-900">
-                R{currentRevenue.toLocaleString()}
+                R{dashboardData.currentRevenue.toLocaleString()}
               </div>
-              <div className={`flex items-center text-sm ${revenueChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {revenueChange >= 0 ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
-                <span>{Math.abs(revenueChange).toFixed(1)}%</span>
-              </div>
+              {revenueChange !== 0 && (
+                <div className={`flex items-center text-sm ${revenueChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {revenueChange >= 0 ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                  <span>{Math.abs(revenueChange).toFixed(1)}%</span>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-slate-600 mt-1">vs previous month</p>
+            <p className="text-xs text-slate-600 mt-1">vs previous period</p>
           </CardContent>
         </Card>
 
@@ -76,8 +120,12 @@ export const DashboardOverview = ({ selectedBusiness }: DashboardOverviewProps) 
             <div className="flex items-center space-x-2">
               <TrendingUp className="text-purple-600" size={20} />
               <div>
-                <div className="text-lg font-bold text-slate-900">{topBusiness.name}</div>
-                <p className="text-xs text-slate-600">R{topBusiness.revenue.toLocaleString()}</p>
+                <div className="text-lg font-bold text-slate-900">
+                  {dashboardData.topBusiness.name || 'N/A'}
+                </div>
+                <p className="text-xs text-slate-600">
+                  R{dashboardData.topBusiness.revenue.toLocaleString()}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -91,18 +139,24 @@ export const DashboardOverview = ({ selectedBusiness }: DashboardOverviewProps) 
             <CardTitle>Business Performance Comparison</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={businessData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip formatter={(value, name) => [
-                  name === 'revenue' ? `R${value.toLocaleString()}` : value,
-                  name === 'revenue' ? 'Revenue' : 'Transactions'
-                ]} />
-                <Bar dataKey="revenue" fill="#3B82F6" name="revenue" />
-              </BarChart>
-            </ResponsiveContainer>
+            {dashboardData.businessData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={dashboardData.businessData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip formatter={(value, name) => [
+                    name === 'revenue' ? `R${value.toLocaleString()}` : value,
+                    name === 'revenue' ? 'Revenue' : 'Transactions'
+                  ]} />
+                  <Bar dataKey="revenue" fill="#3B82F6" name="revenue" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-slate-500">
+                No business data available
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -139,38 +193,38 @@ export const DashboardOverview = ({ selectedBusiness }: DashboardOverviewProps) 
           <CardTitle>Recent Transactions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="text-left py-2 px-4 font-medium text-slate-600">Date</th>
-                  <th className="text-left py-2 px-4 font-medium text-slate-600">Business</th>
-                  <th className="text-left py-2 px-4 font-medium text-slate-600">Type</th>
-                  <th className="text-left py-2 px-4 font-medium text-slate-600">Amount</th>
-                  <th className="text-left py-2 px-4 font-medium text-slate-600">Customer</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mockTransactions.slice(0, 5).map((transaction) => (
-                  <tr key={transaction.id} className="border-b border-slate-100">
-                    <td className="py-2 px-4 text-sm">{transaction.date}</td>
-                    <td className="py-2 px-4 text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        transaction.business === 'Fish' ? 'bg-blue-100 text-blue-800' :
-                        transaction.business === 'Honey' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {transaction.business}
-                      </span>
-                    </td>
-                    <td className="py-2 px-4 text-sm capitalize">{transaction.type}</td>
-                    <td className="py-2 px-4 text-sm font-medium">R{transaction.amount.toLocaleString()}</td>
-                    <td className="py-2 px-4 text-sm">{transaction.customer}</td>
+          {dashboardData.recentTransactions.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-200">
+                    <th className="text-left py-2 px-4 font-medium text-slate-600">Date</th>
+                    <th className="text-left py-2 px-4 font-medium text-slate-600">Type</th>
+                    <th className="text-left py-2 px-4 font-medium text-slate-600">Amount</th>
+                    <th className="text-left py-2 px-4 font-medium text-slate-600">Customer</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {dashboardData.recentTransactions.map((transaction) => (
+                    <tr key={transaction.id} className="border-b border-slate-100">
+                      <td className="py-2 px-4 text-sm">{transaction.date}</td>
+                      <td className="py-2 px-4 text-sm capitalize">{transaction.type}</td>
+                      <td className="py-2 px-4 text-sm font-medium">
+                        R{transaction.amount.toLocaleString()}
+                      </td>
+                      <td className="py-2 px-4 text-sm">
+                        {transaction.customer_name || 'N/A'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-slate-500">
+              No recent transactions found. Start by adding your first transaction.
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

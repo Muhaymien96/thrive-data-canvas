@@ -8,9 +8,9 @@ import { CSVUpload } from './CSVUpload';
 import { YocoCSVUpload } from './YocoCSVUpload';
 import { InvoiceFromTransactionModal } from './InvoiceFromTransactionModal';
 import { useTransactions } from '@/hooks/useSupabaseData';
-import { Plus, Upload, CreditCard, FileText, Eye } from 'lucide-react';
+import { Plus, Upload, CreditCard, FileText, Eye, Receipt } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import type { BusinessWithAll, Transaction } from '@/types/transaction';
+import type { BusinessWithAll, Transaction } from '@/types/database';
 
 interface TransactionsViewProps {
   selectedBusiness: BusinessWithAll;
@@ -23,12 +23,11 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   
-  const { data: transactions, isLoading, error } = useTransactions(
-    selectedBusiness === 'All' ? undefined : selectedBusiness
-  );
+  const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness;
+  const { data: transactions = [], isLoading, error } = useTransactions(businessId);
 
-  const handleSaveTransaction = (transaction: Transaction) => {
-    console.log('Saving transaction:', transaction);
+  const handleSaveTransaction = (transactionData: any) => {
+    console.log('Saving transaction:', transactionData);
     toast({
       title: "Transaction Saved",
       description: "Transaction has been successfully saved.",
@@ -59,19 +58,6 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
         return 'bg-red-100 text-red-800';
       case 'partial':
         return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-slate-100 text-slate-800';
-    }
-  };
-
-  const getBusinessTypeColor = (type: string) => {
-    switch (type) {
-      case 'Fish':
-        return 'bg-blue-100 text-blue-800';
-      case 'Honey':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Mushrooms':
-        return 'bg-green-100 text-green-800';
       default:
         return 'bg-slate-100 text-slate-800';
     }
@@ -178,7 +164,10 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
       {/* Transactions Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Transaction History</CardTitle>
+          <CardTitle className="flex items-center space-x-2">
+            <Receipt size={20} />
+            <span>Transaction History</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -186,7 +175,7 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               <span className="ml-3 text-slate-600">Loading transactions...</span>
             </div>
-          ) : transactions && transactions.length > 0 ? (
+          ) : transactions.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -214,8 +203,8 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
                         {transaction.customer_name || 'N/A'}
                       </td>
                       <td className="py-3 px-4 text-sm">
-                        <Badge className={`text-xs ${getStatusColor(transaction.payment_status)}`}>
-                          {transaction.payment_status}
+                        <Badge className={`text-xs ${getStatusColor(transaction.payment_status || 'pending')}`}>
+                          {transaction.payment_status || 'pending'}
                         </Badge>
                       </td>
                       <td className="py-3 px-4 text-sm">
@@ -253,8 +242,19 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
               </table>
             </div>
           ) : (
-            <div className="text-center py-8 text-slate-600">
-              No transactions found. Start by adding your first transaction.
+            <div className="text-center py-12">
+              <Receipt size={48} className="mx-auto text-slate-300 mb-4" />
+              <h3 className="text-lg font-medium text-slate-900 mb-2">No transactions found</h3>
+              <p className="text-slate-500 mb-4">
+                {selectedBusiness === 'All' 
+                  ? 'Start by adding your first transaction to track your business activity.'
+                  : 'No transactions found for the selected business.'
+                }
+              </p>
+              <Button onClick={() => setShowForm(true)} className="flex items-center space-x-2">
+                <Plus size={16} />
+                <span>Add Your First Transaction</span>
+              </Button>
             </div>
           )}
         </CardContent>
