@@ -7,8 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useUpdateTransaction } from '@/hooks/useUpdateTransaction';
+import { InvoiceGenerationModal } from './InvoiceGenerationModal';
+import { InvoiceViewModal } from './InvoiceViewModal';
 import { toast } from '@/hooks/use-toast';
-import { Calendar, User, Package, CreditCard, FileText, DollarSign } from 'lucide-react';
+import { Calendar, User, Package, CreditCard, FileText, DollarSign, Receipt, Eye } from 'lucide-react';
 import type { Transaction } from '@/types/database';
 
 interface TransactionDetailsModalProps {
@@ -19,6 +21,8 @@ interface TransactionDetailsModalProps {
 
 export const TransactionDetailsModal = ({ transaction, onClose, onTransactionUpdated }: TransactionDetailsModalProps) => {
   const [paymentStatus, setPaymentStatus] = useState(transaction.payment_status || 'pending');
+  const [showInvoiceGeneration, setShowInvoiceGeneration] = useState(false);
+  const [showInvoiceView, setShowInvoiceView] = useState(false);
   const updateTransaction = useUpdateTransaction();
 
   const handleStatusUpdate = async () => {
@@ -50,6 +54,14 @@ export const TransactionDetailsModal = ({ transaction, onClose, onTransactionUpd
         variant: "destructive",
       });
     }
+  };
+
+  const handleGenerateInvoice = () => {
+    setShowInvoiceGeneration(true);
+  };
+
+  const handleViewInvoice = () => {
+    setShowInvoiceView(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -86,152 +98,211 @@ export const TransactionDetailsModal = ({ transaction, onClose, onTransactionUpd
     return `R${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}`;
   };
 
+  const canGenerateInvoice = transaction.type === 'sale' && !transaction.invoice_generated;
+  const hasInvoice = transaction.invoice_generated || transaction.invoice_number;
+
   return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText size={20} />
-            Transaction Details
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={true} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText size={20} />
+              Transaction Details
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Badge variant={getTransactionTypeColor(transaction.type)} className="text-sm">
-                {transaction.type === 'salary' ? 'Employee Salary' : transaction.type}
-              </Badge>
-              <Badge className={`text-sm ${getStatusColor(transaction.payment_status || 'pending')}`}>
-                {transaction.payment_status || 'pending'}
-              </Badge>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Badge variant={getTransactionTypeColor(transaction.type)} className="text-sm">
+                  {transaction.type === 'salary' ? 'Employee Salary' : transaction.type}
+                </Badge>
+                <Badge className={`text-sm ${getStatusColor(transaction.payment_status || 'pending')}`}>
+                  {transaction.payment_status || 'pending'}
+                </Badge>
+              </div>
+              <div className="text-2xl font-bold text-right">
+                {formatCurrency(transaction.amount)}
+              </div>
             </div>
-            <div className="text-2xl font-bold text-right">
-              {formatCurrency(transaction.amount)}
-            </div>
-          </div>
 
-          <Separator />
+            <Separator />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Calendar size={16} className="text-slate-500" />
-                <span className="text-sm font-medium">Date:</span>
-                <span className="text-sm">{new Date(transaction.date).toLocaleDateString()}</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Calendar size={16} className="text-slate-500" />
+                  <span className="text-sm font-medium">Date:</span>
+                  <span className="text-sm">{new Date(transaction.date).toLocaleDateString()}</span>
+                </div>
+
+                {transaction.customer_name && (
+                  <div className="flex items-center gap-2">
+                    <User size={16} className="text-slate-500" />
+                    <span className="text-sm font-medium">
+                      {transaction.type === 'expense' ? 'Supplier:' : 
+                       transaction.type === 'salary' ? 'Employee:' : 'Customer:'}
+                    </span>
+                    <span className="text-sm">{transaction.customer_name}</span>
+                  </div>
+                )}
+
+                {transaction.payment_method && (
+                  <div className="flex items-center gap-2">
+                    <CreditCard size={16} className="text-slate-500" />
+                    <span className="text-sm font-medium">Payment Method:</span>
+                    <span className="text-sm capitalize">{transaction.payment_method.replace('_', ' ')}</span>
+                  </div>
+                )}
+
+                {transaction.invoice_number && (
+                  <div className="flex items-center gap-2">
+                    <FileText size={16} className="text-slate-500" />
+                    <span className="text-sm font-medium">Invoice:</span>
+                    <span className="text-sm">{transaction.invoice_number}</span>
+                  </div>
+                )}
               </div>
 
-              {transaction.customer_name && (
-                <div className="flex items-center gap-2">
-                  <User size={16} className="text-slate-500" />
-                  <span className="text-sm font-medium">
-                    {transaction.type === 'expense' ? 'Supplier:' : 
-                     transaction.type === 'salary' ? 'Employee:' : 'Customer:'}
-                  </span>
-                  <span className="text-sm">{transaction.customer_name}</span>
-                </div>
-              )}
-
-              {transaction.payment_method && (
-                <div className="flex items-center gap-2">
-                  <CreditCard size={16} className="text-slate-500" />
-                  <span className="text-sm font-medium">Payment Method:</span>
-                  <span className="text-sm capitalize">{transaction.payment_method.replace('_', ' ')}</span>
-                </div>
-              )}
-
-              {transaction.invoice_number && (
-                <div className="flex items-center gap-2">
-                  <FileText size={16} className="text-slate-500" />
-                  <span className="text-sm font-medium">Invoice:</span>
-                  <span className="text-sm">{transaction.invoice_number}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              {transaction.type === 'salary' && transaction.hours_worked && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Hours Worked:</span>
-                    <span className="text-sm">{transaction.hours_worked}h</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Hourly Rate:</span>
-                    <span className="text-sm">{formatCurrency(transaction.hourly_rate || 0)}</span>
-                  </div>
-                </>
-              )}
-
-              {transaction.description?.includes('Product:') && (
-                <div className="flex items-center gap-2">
-                  <Package size={16} className="text-slate-500" />
-                  <span className="text-sm font-medium">Product Sale</span>
-                </div>
-              )}
-
-              {transaction.yoco_transaction_id && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Yoco Transaction:</span>
-                    <span className="text-sm font-mono">{transaction.yoco_transaction_id}</span>
-                  </div>
-                  {transaction.yoco_net_amount && (
+              <div className="space-y-4">
+                {transaction.type === 'salary' && transaction.hours_worked && (
+                  <>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">Net Amount:</span>
-                      <span className="text-sm">{formatCurrency(transaction.yoco_net_amount)}</span>
+                      <span className="text-sm font-medium">Hours Worked:</span>
+                      <span className="text-sm">{transaction.hours_worked}h</span>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Hourly Rate:</span>
+                      <span className="text-sm">{formatCurrency(transaction.hourly_rate || 0)}</span>
+                    </div>
+                  </>
+                )}
 
-          {transaction.description && (
-            <div>
-              <Label className="text-sm font-medium">Description</Label>
-              <div className="mt-1 p-3 bg-slate-50 rounded-md text-sm">
-                {transaction.description}
+                {transaction.description?.includes('Product:') && (
+                  <div className="flex items-center gap-2">
+                    <Package size={16} className="text-slate-500" />
+                    <span className="text-sm font-medium">Product Sale</span>
+                  </div>
+                )}
+
+                {transaction.yoco_transaction_id && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Yoco Transaction:</span>
+                      <span className="text-sm font-mono">{transaction.yoco_transaction_id}</span>
+                    </div>
+                    {transaction.yoco_net_amount && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">Net Amount:</span>
+                        <span className="text-sm">{formatCurrency(transaction.yoco_net_amount)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
-          )}
 
-          {transaction.payment_status !== 'paid' && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Update Payment Status</Label>
-                <div className="flex items-center gap-3">
-                  <Select value={paymentStatus} onValueChange={setPaymentStatus}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="paid">Paid</SelectItem>
-                      <SelectItem value="partial">Partial</SelectItem>
-                      <SelectItem value="overdue">Overdue</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button 
-                    onClick={handleStatusUpdate} 
-                    disabled={updateTransaction.isPending || paymentStatus === transaction.payment_status}
-                    size="sm"
-                  >
-                    {updateTransaction.isPending ? 'Updating...' : 'Update Status'}
-                  </Button>
+            {transaction.description && (
+              <div>
+                <Label className="text-sm font-medium">Description</Label>
+                <div className="mt-1 p-3 bg-slate-50 rounded-md text-sm">
+                  {transaction.description}
                 </div>
               </div>
-            </>
-          )}
+            )}
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
+            {/* Invoice Actions */}
+            {(canGenerateInvoice || hasInvoice) && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Invoice Actions</Label>
+                  <div className="flex items-center gap-3">
+                    {canGenerateInvoice && (
+                      <Button
+                        onClick={handleGenerateInvoice}
+                        className="flex items-center gap-2"
+                        size="sm"
+                      >
+                        <Receipt size={16} />
+                        Generate Invoice
+                      </Button>
+                    )}
+                    {hasInvoice && (
+                      <Button
+                        onClick={handleViewInvoice}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                        size="sm"
+                      >
+                        <Eye size={16} />
+                        View Invoice
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {transaction.payment_status !== 'paid' && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Update Payment Status</Label>
+                  <div className="flex items-center gap-3">
+                    <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="partial">Partial</SelectItem>
+                        <SelectItem value="overdue">Overdue</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      onClick={handleStatusUpdate} 
+                      disabled={updateTransaction.isPending || paymentStatus === transaction.payment_status}
+                      size="sm"
+                    >
+                      {updateTransaction.isPending ? 'Updating...' : 'Update Status'}
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={onClose}>
+                Close
+              </Button>
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      {showInvoiceGeneration && (
+        <InvoiceGenerationModal
+          transaction={transaction}
+          onClose={() => setShowInvoiceGeneration(false)}
+          onInvoiceGenerated={(invoiceData) => {
+            console.log('Invoice generated:', invoiceData);
+            toast({
+              title: "Invoice Generated",
+              description: "Invoice has been successfully generated.",
+            });
+          }}
+        />
+      )}
+
+      {showInvoiceView && (
+        <InvoiceViewModal
+          transaction={transaction}
+          onClose={() => setShowInvoiceView(false)}
+        />
+      )}
+    </>
   );
 };

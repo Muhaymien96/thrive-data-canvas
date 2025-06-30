@@ -2,12 +2,11 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Edit, Trash2, Star, Mail, Phone, MapPin, CreditCard, Calendar } from 'lucide-react';
 import { SupplierForm } from './SupplierForm';
 import { SupplierPaymentDialog } from './SupplierPaymentDialog';
-import { useSuppliers, useDeleteSupplier } from '@/hooks/useSuppliers';
+import { useSuppliers } from '@/hooks/useSuppliers';
+import { Plus, MapPin, Phone, Mail, Star, DollarSign, Calendar, Truck, CreditCard } from 'lucide-react';
 import type { BusinessWithAll, Supplier } from '@/types/database';
 
 interface SuppliersViewProps {
@@ -15,45 +14,37 @@ interface SuppliersViewProps {
 }
 
 export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
-  const [paymentSupplier, setPaymentSupplier] = useState<Supplier | null>(null);
-
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  
   const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness.id;
   const { data: suppliers = [], isLoading, error } = useSuppliers(businessId);
-  const deleteSupplier = useDeleteSupplier();
 
-  const filteredSuppliers = suppliers.filter(supplier =>
-    supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.category?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const totalSuppliers = filteredSuppliers.length;
-  const totalSpent = filteredSuppliers.reduce((sum, supplier) => sum + (supplier.total_spent || 0), 0);
-  const totalOutstanding = filteredSuppliers.reduce((sum, supplier) => sum + (supplier.outstanding_balance || 0), 0);
-  const averageRating = filteredSuppliers.length > 0 
-    ? filteredSuppliers.reduce((sum, supplier) => sum + (supplier.rating || 0), 0) / filteredSuppliers.length 
-    : 0;
-
-  const handleDeleteSupplier = (id: string) => {
-    if (confirm('Are you sure you want to delete this supplier?')) {
-      deleteSupplier.mutate(id);
-    }
+  const formatCurrency = (amount: number) => {
+    return `R${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}`;
   };
 
-  if (selectedBusiness === 'All') {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Never';
+    return new Date(dateString).toLocaleDateString('en-ZA');
+  };
+
+  const handleMakePayment = (supplier: Supplier) => {
+    setSelectedSupplier(supplier);
+    setShowPaymentDialog(true);
+  };
+
+  if (isLoading) {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-slate-900">Suppliers</h2>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center text-slate-500">
-              Please select a specific business to manage suppliers.
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-900">Suppliers</h2>
+        </div>
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Loading suppliers...</p>
+        </div>
       </div>
     );
   }
@@ -61,7 +52,9 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
   if (error) {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-slate-900">Suppliers</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-slate-900">Suppliers</h2>
+        </div>
         <Card>
           <CardContent className="pt-6">
             <div className="text-center text-red-600">
@@ -76,213 +69,177 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Suppliers</h2>
-          <p className="text-slate-600">Manage your supplier relationships and track spending</p>
-        </div>
-        <Button onClick={() => setShowAddForm(true)}>
-          <Plus size={16} className="mr-2" />
-          Add Supplier
+        <h2 className="text-2xl font-bold text-slate-900">Suppliers</h2>
+        <Button
+          onClick={() => setShowForm(true)}
+          className="flex items-center space-x-2"
+          disabled={!businessId}
+        >
+          <Plus size={16} />
+          <span>Add Supplier</span>
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Suppliers</CardTitle>
-            <Plus className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalSuppliers}</div>
-            <p className="text-xs text-muted-foreground">
-              Active supplier relationships
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
-            <Plus className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">R{totalSpent.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
-              Across all suppliers
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Outstanding Balance</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">R{totalOutstanding.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
-              Amount owed to suppliers
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{averageRating.toFixed(1)}</div>
-            <p className="text-xs text-muted-foreground">
-              Out of 5 stars
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center space-x-4">
-            <div className="relative flex-1">
-              <Search size={16} className="absolute left-3 top-3 text-slate-400" />
-              <Input
-                placeholder="Search suppliers by name, email, or category..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-slate-600">Loading suppliers...</span>
-            </div>
-          ) : filteredSuppliers.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-slate-500">No suppliers found. Add your first supplier to get started.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredSuppliers.map((supplier) => (
-                <Card key={supplier.id} className="border border-slate-200 hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{supplier.name}</CardTitle>
-                      <div className="flex items-center space-x-1">
-                        <Star size={16} className="text-yellow-400 fill-current" />
-                        <span className="text-sm text-slate-600">{supplier.rating || 0}</span>
-                      </div>
-                    </div>
+      {suppliers.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {suppliers.map((supplier) => (
+            <Card key={supplier.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg font-semibold text-slate-900 mb-1">
+                      {supplier.name}
+                    </CardTitle>
                     {supplier.category && (
-                      <Badge variant="secondary" className="w-fit">
+                      <Badge variant="secondary" className="text-xs">
                         {supplier.category}
                       </Badge>
                     )}
-                    {supplier.outstanding_balance && supplier.outstanding_balance > 0 && (
-                      <Badge variant="destructive" className="w-fit">
-                        Outstanding: R{supplier.outstanding_balance.toFixed(2)}
-                      </Badge>
-                    )}
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-2">
-                      {supplier.email && (
-                        <div className="flex items-center space-x-2 text-sm text-slate-600">
-                          <Mail size={14} />
-                          <span>{supplier.email}</span>
-                        </div>
-                      )}
-                      {supplier.phone && (
-                        <div className="flex items-center space-x-2 text-sm text-slate-600">
-                          <Phone size={14} />
-                          <span>{supplier.phone}</span>
-                        </div>
-                      )}
-                      {supplier.address && (
-                        <div className="flex items-center space-x-2 text-sm text-slate-600">
-                          <MapPin size={14} />
-                          <span className="truncate">{supplier.address}</span>
-                        </div>
-                      )}
+                  </div>
+                  {supplier.rating && supplier.rating > 0 && (
+                    <div className="flex items-center space-x-1 text-yellow-500">
+                      <Star size={16} fill="currentColor" />
+                      <span className="text-sm font-medium">{supplier.rating}</span>
                     </div>
-                    
-                    <div className="pt-3 border-t border-slate-100">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-sm font-medium text-slate-900">
-                          Total Spent: R{(supplier.total_spent || 0).toFixed(2)}
-                        </span>
-                      </div>
-                      
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-xs text-slate-500">
-                          {supplier.last_order ? `Last order: ${new Date(supplier.last_order).toLocaleDateString()}` : 'No orders yet'}
-                        </span>
-                        {supplier.last_payment_date && (
-                          <span className="text-xs text-slate-500 flex items-center space-x-1">
-                            <Calendar size={12} />
-                            <span>Paid: {new Date(supplier.last_payment_date).toLocaleDateString()}</span>
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className="flex justify-between items-center space-x-2">
-                        <div className="flex space-x-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedSupplier(supplier);
-                              setShowAddForm(true);
-                            }}
-                          >
-                            <Edit size={14} />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleDeleteSupplier(supplier.id)}
-                            disabled={deleteSupplier.isPending}
-                          >
-                            <Trash2 size={14} />
-                          </Button>
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={() => setPaymentSupplier(supplier)}
-                          className="flex items-center space-x-1"
-                        >
-                          <CreditCard size={14} />
-                          <span>Pay</span>
-                        </Button>
-                      </div>
+                  )}
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                {/* Contact Information - Always reserve space */}
+                <div className="min-h-[60px] space-y-2">
+                  {supplier.email && (
+                    <div className="flex items-center space-x-2 text-sm text-slate-600">
+                      <Mail size={14} />
+                      <span className="truncate">{supplier.email}</span>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  )}
+                  {supplier.phone && (
+                    <div className="flex items-center space-x-2 text-sm text-slate-600">
+                      <Phone size={14} />
+                      <span>{supplier.phone}</span>
+                    </div>
+                  )}
+                  {supplier.address && (
+                    <div className="flex items-center space-x-2 text-sm text-slate-600">
+                      <MapPin size={14} />
+                      <span className="truncate">{supplier.address}</span>
+                    </div>
+                  )}
+                  {!supplier.email && !supplier.phone && !supplier.address && (
+                    <div className="flex items-center justify-center h-[60px] text-sm text-slate-400">
+                      No contact details available
+                    </div>
+                  )}
+                </div>
 
-      {showAddForm && (
-        <SupplierForm
-          supplier={selectedSupplier}
-          businessId={selectedBusiness.id}
-          onClose={() => {
-            setShowAddForm(false);
-            setSelectedSupplier(null);
-          }}
-        />
+                {/* Financial Information */}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <div className="flex items-center space-x-1 text-slate-500 mb-1">
+                      <DollarSign size={12} />
+                      <span className="text-xs">Total Spent</span>
+                    </div>
+                    <div className="font-medium">
+                      {formatCurrency(supplier.total_spent || 0)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-1 text-slate-500 mb-1">
+                      <CreditCard size={12} />
+                      <span className="text-xs">Outstanding</span>
+                    </div>
+                    <div className={`font-medium ${
+                      (supplier.outstanding_balance || 0) > 0 ? 'text-red-600' : 'text-green-600'
+                    }`}>
+                      {formatCurrency(supplier.outstanding_balance || 0)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recent Activity */}
+                <div className="grid grid-cols-2 gap-4 text-xs text-slate-500">
+                  <div>
+                    <div className="flex items-center space-x-1 mb-1">
+                      <Truck size={10} />
+                      <span>Last Order</span>
+                    </div>
+                    <div>{formatDate(supplier.last_order)}</div>
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-1 mb-1">
+                      <Calendar size={10} />
+                      <span>Last Payment</span>
+                    </div>
+                    <div>{formatDate(supplier.last_payment_date)}</div>
+                  </div>
+                </div>
+
+                {/* Action Buttons - Always at bottom */}
+                <div className="pt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleMakePayment(supplier)}
+                      className="flex-1 text-xs"
+                      disabled={supplier.name === 'Self-Produced'}
+                    >
+                      Make Payment
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs"
+                    >
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-12">
+              <Truck size={48} className="mx-auto text-slate-300 mb-4" />
+              <h3 className="text-lg font-medium text-slate-900 mb-2">No suppliers found</h3>
+              <p className="text-slate-500 mb-4">
+                Add your first supplier to start managing your supply chain.
+              </p>
+              <Button
+                onClick={() => setShowForm(true)}
+                className="flex items-center space-x-2"
+                disabled={!businessId}
+              >
+                <Plus size={16} />
+                <span>Add Your First Supplier</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {paymentSupplier && (
+      {showForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <SupplierForm
+              onClose={() => setShowForm(false)}
+              defaultBusiness={businessId}
+            />
+          </div>
+        </div>
+      )}
+
+      {showPaymentDialog && selectedSupplier && (
         <SupplierPaymentDialog
-          supplier={paymentSupplier}
-          isOpen={!!paymentSupplier}
-          onClose={() => setPaymentSupplier(null)}
+          supplier={selectedSupplier}
+          onClose={() => {
+            setShowPaymentDialog(false);
+            setSelectedSupplier(null);
+          }}
         />
       )}
     </div>

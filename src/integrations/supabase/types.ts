@@ -239,6 +239,63 @@ export type Database = {
           },
         ]
       }
+      event_checklists: {
+        Row: {
+          business_id: string
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          event_id: string
+          id: string
+          priority: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          event_id: string
+          id?: string
+          priority?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          event_id?: string
+          id?: string
+          priority?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_checklists_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_checklists_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           business_id: string

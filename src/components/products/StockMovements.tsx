@@ -3,16 +3,69 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Package, Activity, AlertTriangle } from 'lucide-react';
-import { useStockMovements } from '@/hooks/useStockMovements';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import type { BusinessWithAll } from '@/types/database';
 
 interface StockMovementsProps {
   selectedBusiness: BusinessWithAll;
 }
 
+interface StockMovementWithProduct {
+  id: string;
+  product_id: string;
+  business_id: string;
+  type: string;
+  quantity: number;
+  reason: string;
+  reference: string | null;
+  date: string;
+  created_at: string;
+  products: {
+    name: string;
+    sku: string | null;
+    current_stock: number | null;
+  } | null;
+}
+
 export const StockMovements = ({ selectedBusiness }: StockMovementsProps) => {
   const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness.id;
-  const { data: movements = [], isLoading, error } = useStockMovements(businessId);
+  
+  const { data: movements = [], isLoading, error } = useQuery({
+    queryKey: ['stock-movements', businessId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      let query = supabase
+        .from('stock_movements')
+        .select(`
+          *,
+          products!inner(
+            name,
+            sku,
+            current_stock,
+            businesses!inner(owner_id)
+          )
+        `)
+        .eq('products.businesses.owner_id', user.id)
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (businessId) {
+        query = query.eq('business_id', businessId);
+      }
+
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Error fetching stock movements:', error);
+        throw error;
+      }
+      
+      return data as StockMovementWithProduct[];
+    },
+  });
   
   const getMovementIcon = (type: string) => {
     switch (type) {
@@ -38,6 +91,10 @@ export const StockMovements = ({ selectedBusiness }: StockMovementsProps) => {
       default:
         return 'bg-slate-100 text-slate-800';
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-ZA');
   };
 
   if (isLoading) {
@@ -101,12 +158,17 @@ export const StockMovements = ({ selectedBusiness }: StockMovementsProps) => {
                     <div className="font-medium text-slate-900">
                       {movement.products?.name || 'Unknown Product'}
                     </div>
+                    {movement.products?.sku && (
+                      <div className="text-sm text-slate-400">
+                        SKU: {movement.products.sku}
+                      </div>
+                    )}
                     <div className="text-sm text-slate-500">
                       {movement.reason}
                     </div>
                     {movement.reference && (
                       <div className="text-xs text-slate-400 mt-1">
-                        Reference: {movement.reference}
+                        {movement.reference}
                       </div>
                     )}
                   </div>
@@ -118,15 +180,23 @@ export const StockMovements = ({ selectedBusiness }: StockMovementsProps) => {
                       {movement.type.charAt(0).toUpperCase() + movement.type.slice(1)}
                     </Badge>
                     <span className={`text-sm font-medium ${
-                      movement.type === 'in' ? 'text-green-600' : 'text-red-600'
+                      movement.type === 'in' ? 'text-green-600' : 
+                      movement.type === 'out' ? 'text-red-600' : 'text-blue-600'
                     }`}>
-                      {movement.type === 'in' ? '+' : '-'}{movement.quantity}
+                      {movement.type === 'in' ? '+' : movement.type === 'out' ? '-' : ''}
+                      {movement.quantity}
                     </span>
                   </div>
                   
-                  <div className="text-xs text-slate-400 mt-1">
-                    {movement.date}
+                  <div className="text-xs text-slate-400">
+                    {formatDate(movement.date)}
                   </div>
+                  
+                  {movement.products?.current_stock !== null && (
+                    <div className="text-xs text-slate-500 mt-1">
+                      Stock: {movement.products.current_stock}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
