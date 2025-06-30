@@ -13,17 +13,26 @@ import { ComplianceView } from '@/components/compliance/ComplianceView';
 import { EmployeesView } from '@/components/employees/EmployeesView';
 import { BusinessManagementView } from '@/components/business/BusinessManagementView';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBusinesses } from '@/hooks/useSupabaseData';
 import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
-import type { Business, BusinessWithAll } from '@/types/transaction';
+import type { BusinessWithAll } from '@/types/transaction';
 
 export type ViewType = 'dashboard' | 'transactions' | 'suppliers' | 'customers' | 'products' | 'events' | 'compliance' | 'employees' | 'business';
 
 export const AdminDashboard = () => {
-  const [selectedBusiness, setSelectedBusiness] = useState<BusinessWithAll>('Fish');
+  const [selectedBusiness, setSelectedBusiness] = useState<BusinessWithAll>('All');
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user, logout } = useAuth();
+  const { data: businesses } = useBusinesses();
+
+  // Use the first business as default if available
+  React.useEffect(() => {
+    if (businesses && businesses.length > 0 && selectedBusiness === 'All') {
+      setSelectedBusiness(businesses[0].name as BusinessWithAll);
+    }
+  }, [businesses, selectedBusiness]);
 
   const renderCurrentView = () => {
     switch (currentView) {
@@ -70,7 +79,7 @@ export const AdminDashboard = () => {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2 text-sm text-slate-600">
               <User size={16} />
-              <span>{user?.name} ({user?.role})</span>
+              <span>{user?.email}</span>
             </div>
             <Button variant="outline" size="sm" onClick={logout} className="flex items-center space-x-2">
               <LogOut size={16} />

@@ -1,5 +1,5 @@
 
-export type UserRole = 'owner' | 'admin';
+export type UserRole = 'owner' | 'admin' | 'employee';
 
 export interface User {
   id: string;
@@ -9,8 +9,9 @@ export interface User {
 }
 
 export interface AuthContext {
-  user: User | null;
+  user: any | null; // Using Supabase User type
   login: (email: string, password: string) => Promise<boolean>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   isLoading: boolean;
 }

@@ -3,7 +3,6 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { AdminDashboard } from '@/components/AdminDashboard';
-import { OwnerDashboard } from '@/components/dashboard/OwnerDashboard';
 
 const Index = () => {
   const { user, isLoading } = useAuth();
@@ -23,12 +22,6 @@ const Index = () => {
     return <LoginForm />;
   }
 
-  // Role-based dashboard rendering
-  if (user.role === 'owner') {
-    return <OwnerDashboard />;
-  }
-
-  // Default to admin dashboard
   return <AdminDashboard />;
 };
 
