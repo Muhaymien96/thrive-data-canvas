@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TransactionForm } from './TransactionForm';
 import { CSVUpload } from './CSVUpload';
+import { YocoCSVUpload } from './YocoCSVUpload';
 import { mockTransactions } from '@/lib/mockData';
-import { Plus, Upload } from 'lucide-react';
+import { Plus, Upload, CreditCard } from 'lucide-react';
 import type { Business } from '@/components/AdminDashboard';
 
 interface TransactionsViewProps {
@@ -14,6 +15,7 @@ interface TransactionsViewProps {
 export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) => {
   const [showForm, setShowForm] = useState(false);
   const [showCSVUpload, setShowCSVUpload] = useState(false);
+  const [showYocoUpload, setShowYocoUpload] = useState(false);
   
   const filteredTransactions = selectedBusiness === 'All' 
     ? mockTransactions 
@@ -24,6 +26,14 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-slate-900">Transactions</h2>
         <div className="flex space-x-2">
+          <Button
+            onClick={() => setShowYocoUpload(true)}
+            variant="outline"
+            className="flex items-center space-x-2"
+          >
+            <CreditCard size={16} />
+            <span>Import Yoco</span>
+          </Button>
           <Button
             onClick={() => setShowCSVUpload(true)}
             variant="outline"
@@ -59,6 +69,15 @@ export const TransactionsView = ({ selectedBusiness }: TransactionsViewProps) =>
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <CSVUpload onClose={() => setShowCSVUpload(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* Yoco Upload Modal */}
+      {showYocoUpload && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <YocoCSVUpload onClose={() => setShowYocoUpload(false)} />
           </div>
         </div>
       )}

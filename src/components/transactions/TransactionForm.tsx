@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,11 +33,20 @@ const transactionSchema = z.object({
   amountPaid: z.number().optional(),
   dueDate: z.date().optional(),
   creditTerms: z.number().min(1).max(90).optional(),
+  
+  // Yoco-specific fields
+  transactionId: z.string().optional(),
+  processingFee: z.number().optional(),
+  netAmount: z.number().optional(),
+  cardType: z.string().optional(),
 }).refine((data) => {
   if (data.paymentStatus === 'partial' && (!data.amountPaid || data.amountPaid >= data.amount)) {
     return false;
   }
   if (data.type === 'credit' && data.paymentStatus !== 'paid' && !data.dueDate) {
+    return false;
+  }
+  if (data.type === 'yoco' && data.processingFee && data.processingFee >= data.amount) {
     return false;
   }
   return true;
@@ -74,6 +82,14 @@ export const TransactionForm = ({ onClose, defaultBusiness }: TransactionFormPro
   const paymentStatus = watch('paymentStatus');
   const creditTerms = watch('creditTerms');
   const amount = watch('amount');
+  const processingFee = watch('processingFee') || 0;
+
+  // Auto-calculate net amount for Yoco transactions
+  React.useEffect(() => {
+    if (selectedType === 'yoco' && amount && processingFee) {
+      setValue('netAmount', amount - processingFee);
+    }
+  }, [selectedType, amount, processingFee, setValue]);
 
   React.useEffect(() => {
     if (selectedType === 'credit' && creditTerms && selectedDate) {
@@ -87,9 +103,14 @@ export const TransactionForm = ({ onClose, defaultBusiness }: TransactionFormPro
     const statusText = data.paymentStatus === 'paid' ? 'paid' : 
                      data.paymentStatus === 'partial' ? 'partially paid' : 'pending payment';
     
+    let description = `Successfully added ${statusText} sale for R${data.amount}`;
+    if (data.type === 'yoco' && data.processingFee) {
+      description += ` (Net: R${(data.amount - data.processingFee).toFixed(2)} after fees)`;
+    }
+    
     toast({
       title: "Sale Recorded",
-      description: `Successfully added ${statusText} sale for R${data.amount}`,
+      description,
     });
     onClose();
   };
@@ -203,6 +224,69 @@ export const TransactionForm = ({ onClose, defaultBusiness }: TransactionFormPro
           <p className="text-sm text-red-600">{errors.amount.message}</p>
         )}
       </div>
+
+      {/* Yoco-specific fields */}
+      {selectedType === 'yoco' && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="transactionId">Yoco Transaction ID (Optional)</Label>
+            <Input
+              id="transactionId"
+              placeholder="e.g., YC123456789"
+              {...register('transactionId')}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="processingFee">Processing Fee (R)</Label>
+            <Input
+              id="processingFee"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              {...register('processingFee', { valueAsNumber: true })}
+            />
+            <p className="text-xs text-slate-600">
+              Yoco typically charges 2.95% + R1.50 per transaction
+            </p>
+          </div>
+
+          {processingFee > 0 && amount && (
+            <div className="bg-slate-50 p-3 rounded-lg">
+              <div className="text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span>Gross Amount:</span>
+                  <span>R{amount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-red-600">
+                  <span>Processing Fee:</span>
+                  <span>-R{processingFee.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-medium border-t pt-1">
+                  <span>Net Amount:</span>
+                  <span>R{(amount - processingFee).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="cardType">Card Type (Optional)</Label>
+            <Select onValueChange={(value) => setValue('cardType', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select card type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Visa">Visa</SelectItem>
+                <SelectItem value="Mastercard">Mastercard</SelectItem>
+                <SelectItem value="American Express">American Express</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="customer">Customer Name *</Label>
