@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
@@ -10,12 +9,13 @@ import { CustomersView } from '@/components/crm/CustomersView';
 import { ProductsView } from '@/components/products/ProductsView';
 import { EventsView } from '@/components/events/EventsView';
 import { ComplianceView } from '@/components/compliance/ComplianceView';
+import { EmployeesView } from '@/components/employees/EmployeesView';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
 
 export type Business = 'Fish' | 'Honey' | 'Mushrooms' | 'All';
-export type ViewType = 'dashboard' | 'transactions' | 'suppliers' | 'customers' | 'products' | 'events' | 'compliance';
+export type ViewType = 'dashboard' | 'transactions' | 'suppliers' | 'customers' | 'products' | 'events' | 'compliance' | 'employees';
 
 export const AdminDashboard = () => {
   const [selectedBusiness, setSelectedBusiness] = useState<Business>('Fish');
@@ -41,6 +41,8 @@ export const AdminDashboard = () => {
         return <EventsView selectedBusiness={selectedBusiness} />;
       case 'compliance':
         return <ComplianceView selectedBusiness={selectedBusiness} />;
+      case 'employees':
+        return <EmployeesView selectedBusiness={selectedBusiness} />;
       default:
         return <DashboardOverview selectedBusiness={selectedBusiness} />;
     }

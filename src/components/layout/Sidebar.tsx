@@ -9,6 +9,7 @@ import {
   Package,
   Calendar,
   FileText,
+  UserCheck,
   ArrowLeft,
   ArrowRight
 } from 'lucide-react';
@@ -27,6 +28,7 @@ const navigationItems = [
   { id: 'suppliers' as ViewType, label: 'Suppliers', icon: Truck },
   { id: 'customers' as ViewType, label: 'Customers', icon: Users },
   { id: 'products' as ViewType, label: 'Products', icon: Package },
+  { id: 'employees' as ViewType, label: 'Employees', icon: UserCheck },
   { id: 'events' as ViewType, label: 'Events', icon: Calendar },
   { id: 'compliance' as ViewType, label: 'Compliance', icon: FileText },
 ];
