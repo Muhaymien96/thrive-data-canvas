@@ -23,7 +23,7 @@ export const InvoiceForm = ({ onClose, onSave }: InvoiceFormProps) => {
   });
 
   const [items, setItems] = useState<InvoiceItem[]>([
-    { id: '1', description: '', quantity: 1, unitPrice: 0, total: 0 }
+    { id: '1', invoice_id: '', description: '', quantity: 1, unit_price: 0, total: 0, created_at: '', updated_at: '' }
   ]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -52,10 +52,13 @@ export const InvoiceForm = ({ onClose, onSave }: InvoiceFormProps) => {
   const addItem = () => {
     setItems([...items, { 
       id: Date.now().toString(), 
+      invoice_id: '',
       description: '', 
       quantity: 1, 
-      unitPrice: 0, 
-      total: 0 
+      unit_price: 0, 
+      total: 0,
+      created_at: '',
+      updated_at: ''
     }]);
   };
 
@@ -69,8 +72,8 @@ export const InvoiceForm = ({ onClose, onSave }: InvoiceFormProps) => {
     setItems(items.map(item => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
-        if (field === 'quantity' || field === 'unitPrice') {
-          updatedItem.total = updatedItem.quantity * updatedItem.unitPrice;
+        if (field === 'quantity' || field === 'unit_price') {
+          updatedItem.total = updatedItem.quantity * updatedItem.unit_price;
         }
         return updatedItem;
       }
@@ -157,8 +160,8 @@ export const InvoiceForm = ({ onClose, onSave }: InvoiceFormProps) => {
                     <Input
                       type="number"
                       step="0.01"
-                      value={item.unitPrice}
-                      onChange={(e) => updateItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                      value={item.unit_price}
+                      onChange={(e) => updateItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
                     />
                   </div>
                   <div className="col-span-2">

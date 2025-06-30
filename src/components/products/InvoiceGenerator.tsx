@@ -45,10 +45,10 @@ export const InvoiceGenerator = ({ selectedBusiness }: InvoiceGeneratorProps) =>
               >
                 <div>
                   <div className="font-medium text-slate-900">
-                    Invoice #{invoice.invoiceNumber}
+                    Invoice #{invoice.invoice_number}
                   </div>
                   <div className="text-sm text-slate-500">
-                    {invoice.customerName} • {invoice.issueDate}
+                    {invoice.customer_name} • {invoice.issue_date}
                   </div>
                 </div>
                 <div className="text-right">

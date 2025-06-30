@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Edit, Trash2, Star, Mail, Phone, MapPin } from 'lucide-react';
 import { SupplierForm } from './SupplierForm';
-import { useSuppliers } from '@/hooks/useSupabaseData';
+import { useSuppliers, useDeleteSupplier } from '@/hooks/useSuppliers';
 import type { BusinessWithAll, Supplier } from '@/types/database';
 
 interface SuppliersViewProps {
@@ -20,6 +20,7 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
 
   const businessId = selectedBusiness === 'All' ? undefined : selectedBusiness.id;
   const { data: suppliers = [], isLoading, error } = useSuppliers(businessId);
+  const deleteSupplier = useDeleteSupplier();
 
   const filteredSuppliers = suppliers.filter(supplier =>
     supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -33,11 +34,26 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
     ? filteredSuppliers.reduce((sum, supplier) => sum + (supplier.rating || 0), 0) / filteredSuppliers.length 
     : 0;
 
-  const handleSaveSupplier = (supplier: Supplier) => {
-    // Handle save logic here
-    setShowAddForm(false);
-    setSelectedSupplier(null);
+  const handleDeleteSupplier = (id: string) => {
+    if (confirm('Are you sure you want to delete this supplier?')) {
+      deleteSupplier.mutate(id);
+    }
   };
+
+  if (selectedBusiness === 'All') {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-slate-900">Suppliers</h2>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center text-slate-500">
+              Please select a specific business to manage suppliers.
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -194,7 +210,12 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
                           >
                             <Edit size={14} />
                           </Button>
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleDeleteSupplier(supplier.id)}
+                            disabled={deleteSupplier.isPending}
+                          >
                             <Trash2 size={14} />
                           </Button>
                         </div>
@@ -211,11 +232,11 @@ export const SuppliersView = ({ selectedBusiness }: SuppliersViewProps) => {
       {showAddForm && (
         <SupplierForm
           supplier={selectedSupplier}
+          businessId={selectedBusiness.id}
           onClose={() => {
             setShowAddForm(false);
             setSelectedSupplier(null);
           }}
-          onSave={handleSaveSupplier}
         />
       )}
     </div>

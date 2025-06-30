@@ -6,16 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
+import { useCreateSupplier, useUpdateSupplier } from '@/hooks/useSuppliers';
 import type { Supplier } from '@/types/database';
 
 interface SupplierFormProps {
   supplier?: Supplier | null;
+  businessId: string;
   onClose: () => void;
-  onSave: (supplier: Supplier) => void;
 }
 
-export const SupplierForm = ({ supplier, onClose, onSave }: SupplierFormProps) => {
-  const [formData, setFormData] = useState<Partial<Supplier>>({
+export const SupplierForm = ({ supplier, businessId, onClose }: SupplierFormProps) => {
+  const [formData, setFormData] = useState({
     name: supplier?.name || '',
     email: supplier?.email || '',
     phone: supplier?.phone || '',
@@ -25,10 +26,35 @@ export const SupplierForm = ({ supplier, onClose, onSave }: SupplierFormProps) =
     total_spent: supplier?.total_spent || 0
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const createSupplier = useCreateSupplier();
+  const updateSupplier = useUpdateSupplier();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData as Supplier);
+    
+    if (!businessId) {
+      return;
+    }
+
+    try {
+      if (supplier) {
+        await updateSupplier.mutateAsync({
+          id: supplier.id,
+          ...formData
+        });
+      } else {
+        await createSupplier.mutateAsync({
+          ...formData,
+          business_id: businessId
+        });
+      }
+      onClose();
+    } catch (error) {
+      console.error('Error saving supplier:', error);
+    }
   };
+
+  const isLoading = createSupplier.isPending || updateSupplier.isPending;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -107,8 +133,8 @@ export const SupplierForm = ({ supplier, onClose, onSave }: SupplierFormProps) =
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit">
-                {supplier ? 'Update Supplier' : 'Add Supplier'}
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? 'Saving...' : (supplier ? 'Update Supplier' : 'Add Supplier')}
               </Button>
             </div>
           </form>
