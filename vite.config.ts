@@ -8,6 +8,15 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      '/organizations': 'http://localhost:3100',
+      '/customers': 'http://localhost:3100',
+      '/businesses': 'http://localhost:3100',
+      '/transactions': 'http://localhost:3100',
+      '/products': 'http://localhost:3100',
+      '/employees': 'http://localhost:3100',
+      '/suppliers': 'http://localhost:3100'
+    }
   },
   plugins: [
     react(),

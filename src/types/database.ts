@@ -1,5 +1,7 @@
-
 import type { Database } from '@/integrations/supabase/types';
+
+// Re-export the Database type
+export type { Database };
 
 // Export all database table types
 export type Customer = Database['public']['Tables']['customers']['Row'];
@@ -8,7 +10,11 @@ export type Transaction = Database['public']['Tables']['transactions']['Row'];
 export type Product = Database['public']['Tables']['products']['Row'];
 export type Employee = Database['public']['Tables']['employees']['Row'];
 export type Supplier = Database['public']['Tables']['suppliers']['Row'];
-export type Profile = Database['public']['Tables']['profiles']['Row'];
+export type BusinessUser = Database['public']['Tables']['business_users']['Row'];
+export type BusinessAccessRequest = Database['public']['Tables']['business_access_requests']['Row'];
+export type Organization = Database['public']['Tables']['organizations']['Row'];
+export type OrganizationUser = Database['public']['Tables']['organization_users']['Row'];
+export type Invite = Database['public']['Tables']['invites']['Row'];
 
 // Additional types for UI components
 export type BusinessWithAll = Business | 'All';
@@ -133,4 +139,11 @@ export interface DashboardData {
     transactions: number;
   };
   recentTransactions: Transaction[];
+}
+
+export type UserRole = 'owner' | 'admin' | 'employee';
+
+export interface BusinessWithDetails extends Business {
+  business_users?: BusinessUser[];
+  organization?: Organization;
 }

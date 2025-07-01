@@ -1,8 +1,8 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import type { BusinessWithAll, DashboardData } from '@/types/database';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useBusinesses = () => {
   const queryClient = useQueryClient();
@@ -381,28 +381,12 @@ export const useDashboardData = (selectedBusiness: BusinessWithAll) => {
 
 export const useCreateBusiness = () => {
   const queryClient = useQueryClient();
+  const { createBusiness } = useAuth();
   
   return useMutation({
     mutationFn: async (businessData: { name: string; type: string; description?: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      
-      const { data, error } = await supabase
-        .from('businesses')
-        .insert([{
-          name: businessData.name,
-          type: businessData.type,
-          description: businessData.description || '',
-          owner_id: user.id
-        }])
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error creating business:', error);
-        throw error;
-      }
-      return data;
+      const result = await createBusiness(businessData);
+      return result.business;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['businesses'] });

@@ -6,17 +6,17 @@ import { useProducts } from '@/hooks/useSupabaseData';
 import { useCustomers } from '@/hooks/useCustomers';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Users, Package, CreditCard } from 'lucide-react';
-import type { BusinessWithAll } from '@/types/database';
+import type { Business } from '@/types/database';
 
 interface BusinessViewProps {
-  business: BusinessWithAll;
+  business: Business;
 }
 
 export const BusinessView = ({ business }: BusinessViewProps) => {
   const { data: dashboardData, isLoading, error } = useDashboardData(business);
   
   // Get business ID for specific business queries
-  const businessId = business === 'All' ? undefined : (typeof business === 'string' ? business : business.id);
+  const businessId = business.id;
   
   // Fetch products and customers data separately
   const { data: products = [] } = useProducts(businessId);

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
@@ -12,40 +11,35 @@ import { EventsView } from '@/components/events/EventsView';
 import { ComplianceView } from '@/components/compliance/ComplianceView';
 import { EmployeesView } from '@/components/employees/EmployeesView';
 import { BusinessManagementView } from '@/components/business/BusinessManagementView';
-import { BusinessOnboarding } from '@/components/business/BusinessOnboarding';
+import { AccessRequestsView } from '@/components/business/AccessRequestsView';
+import { WelcomeDashboard } from '@/components/dashboard/WelcomeDashboard';
 import { useAuth } from '@/contexts/AuthContext';
-import { useBusinesses } from '@/hooks/useSupabaseData';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, User, Building2, Plus } from 'lucide-react';
-import type { BusinessWithAll } from '@/types/database';
+import { LogOut, User, Building2, ArrowLeftRight } from 'lucide-react';
+import type { Business } from '@/types/database';
 
-export type ViewType = 'dashboard' | 'transactions' | 'suppliers' | 'customers' | 'products' | 'events' | 'compliance' | 'employees' | 'business';
+export type ViewType = 'dashboard' | 'transactions' | 'suppliers' | 'customers' | 'products' | 'events' | 'compliance' | 'employees' | 'business' | 'access-requests';
 
-export const AdminDashboard = () => {
-  // Move ALL hooks to the top before any conditional logic
-  const [selectedBusiness, setSelectedBusiness] = useState<BusinessWithAll>('All');
+interface AdminDashboardProps {
+  selectedBusiness?: Business;
+  onBusinessCreated?: (business: Business) => void;
+}
+
+export const AdminDashboard = ({ selectedBusiness, onBusinessCreated }: AdminDashboardProps) => {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [showBusinessOnboarding, setShowBusinessOnboarding] = useState(false);
-  const { user, logout } = useAuth();
-  const { data: businesses = [], isLoading, error, refetch } = useBusinesses();
+  const { user, logout, accessibleBusinesses, currentBusinessUser } = useAuth();
 
-  // Handle business selection effect after hooks
-  React.useEffect(() => {
-    if (businesses.length === 1 && selectedBusiness === 'All') {
-      setSelectedBusiness(businesses[0]);
-    } else if (businesses.length > 1 && selectedBusiness !== 'All' && !businesses.find(b => b.id === (selectedBusiness as any)?.id)) {
-      setSelectedBusiness('All');
-    }
-  }, [businesses, selectedBusiness]);
+  // If no business is selected, show the welcome dashboard
+  if (!selectedBusiness) {
+    return <WelcomeDashboard onBusinessCreated={onBusinessCreated} />;
+  }
 
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
-        return selectedBusiness === 'All' ? 
-          <DashboardOverview selectedBusiness={selectedBusiness} /> :
-          <BusinessView business={selectedBusiness} />;
+        return <BusinessView business={selectedBusiness} />;
       case 'transactions':
         return <TransactionsView selectedBusiness={selectedBusiness} />;
       case 'suppliers':
@@ -62,107 +56,13 @@ export const AdminDashboard = () => {
         return <EmployeesView selectedBusiness={selectedBusiness} />;
       case 'business':
         return <BusinessManagementView selectedBusiness={selectedBusiness} />;
+      case 'access-requests':
+        return <AccessRequestsView businessId={selectedBusiness.id} />;
       default:
-        return <DashboardOverview selectedBusiness={selectedBusiness} />;
+        return <BusinessView business={selectedBusiness} />;
     }
   };
 
-  // Handle loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-slate-600">Loading your businesses...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Handle error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-600 mb-4">
-            <Building2 size={48} className="mx-auto mb-2" />
-            <h2 className="text-xl font-semibold">Error Loading Businesses</h2>
-            <p className="text-sm mt-2">There was an error loading your business data.</p>
-          </div>
-          <Button onClick={() => refetch()} variant="outline">
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Handle business onboarding flow
-  if (showBusinessOnboarding) {
-    return (
-      <BusinessOnboarding 
-        onBusinessCreated={() => {
-          setShowBusinessOnboarding(false);
-          refetch();
-        }}
-      />
-    );
-  }
-
-  // Handle no businesses state
-  if (businesses.length === 0) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex w-full">
-        <Sidebar 
-          currentView={currentView}
-          onViewChange={setCurrentView}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
-        <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-          <div className="flex items-center justify-between bg-white border-b border-slate-200 px-6 py-4">
-            <div>
-              <h1 className="text-xl font-semibold text-slate-900">Welcome to VentureHub</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-sm text-slate-600">
-                <User size={16} />
-                <span>{user?.email}</span>
-              </div>
-              <Button variant="outline" size="sm" onClick={logout} className="flex items-center space-x-2">
-                <LogOut size={16} />
-                <span>Logout</span>
-              </Button>
-            </div>
-          </div>
-          <main className="flex-1 p-6 flex items-center justify-center">
-            <Card className="w-full max-w-md">
-              <CardHeader className="text-center">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-                  <Building2 className="h-6 w-6 text-blue-600" />
-                </div>
-                <CardTitle className="text-2xl">Get Started</CardTitle>
-                <p className="text-sm text-slate-600 mt-2">
-                  You haven't created any businesses yet. Create your first business to start managing your operations.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  onClick={() => setShowBusinessOnboarding(true)}
-                  className="w-full flex items-center space-x-2"
-                >
-                  <Plus size={16} />
-                  <span>Create Your First Business</span>
-                </Button>
-              </CardContent>
-            </Card>
-          </main>
-        </div>
-      </div>
-    );
-  }
-
-  // Main dashboard render
   return (
     <div className="min-h-screen bg-slate-50 flex w-full">
       <Sidebar 
@@ -173,15 +73,22 @@ export const AdminDashboard = () => {
       />
       <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
         <div className="flex items-center justify-between bg-white border-b border-slate-200 px-6 py-4">
-          <Header 
-            selectedBusiness={selectedBusiness}
-            onBusinessChange={setSelectedBusiness}
-            currentView={currentView}
-          />
+          <div className="flex items-center space-x-4">
+            <div>
+              <h1 className="text-xl font-semibold text-slate-900">{selectedBusiness.name}</h1>
+              <p className="text-sm text-slate-600">{selectedBusiness.type}</p>
+            </div>
+            {accessibleBusinesses.length > 1 && (
+              <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                <ArrowLeftRight className="h-4 w-4" />
+                <span>Switch Business</span>
+              </Button>
+            )}
+          </div>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2 text-sm text-slate-600">
               <User size={16} />
-              <span>{user?.email}</span>
+              <span>{currentBusinessUser?.email || user?.email}</span>
             </div>
             <Button variant="outline" size="sm" onClick={logout} className="flex items-center space-x-2">
               <LogOut size={16} />

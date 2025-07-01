@@ -1,9 +1,17 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Users, Package, CreditCard } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { WelcomeDashboard } from './WelcomeDashboard';
 
 export const OwnerDashboard = () => {
+  const { currentBusinessUser, accessibleBusinesses } = useAuth();
+
+  // Show welcome dashboard if no businesses
+  if (!currentBusinessUser && accessibleBusinesses.length === 0) {
+    return <WelcomeDashboard />;
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -65,19 +73,21 @@ export const OwnerDashboard = () => {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Getting Started</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <h3 className="text-lg font-medium text-slate-900 mb-2">Welcome to your Business Dashboard</h3>
-            <p className="text-slate-500 mb-4">
-              Start by adding your first business, customers, and products to see your data here.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {accessibleBusinesses.length === 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Getting Started</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <h3 className="text-lg font-medium text-slate-900 mb-2">Welcome to your Business Dashboard</h3>
+              <p className="text-slate-500 mb-4">
+                Start by adding your first business, customers, and products to see your data here.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 };

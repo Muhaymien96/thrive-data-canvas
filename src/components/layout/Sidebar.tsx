@@ -1,7 +1,7 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import type { Business } from '@/types/database';
 import { 
   LayoutDashboard,
   Receipt,
@@ -13,7 +13,8 @@ import {
   UserCheck,
   Building2,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  Shield
 } from 'lucide-react';
 import type { ViewType } from '@/components/AdminDashboard';
 
@@ -32,11 +33,25 @@ const navigationItems = [
   { id: 'products' as ViewType, label: 'Products', icon: Package },
   { id: 'employees' as ViewType, label: 'Employees', icon: UserCheck },
   { id: 'business' as ViewType, label: 'Business Management', icon: Building2 },
+  { id: 'access-requests' as ViewType, label: 'Access Requests', icon: Shield },
   { id: 'events' as ViewType, label: 'Events', icon: Calendar },
   { id: 'compliance' as ViewType, label: 'Compliance', icon: FileText },
 ];
 
 export const Sidebar = ({ currentView, onViewChange, collapsed, onToggleCollapse }: SidebarProps) => {
+  const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(() => {
+    const stored = localStorage.getItem('selectedBusiness');
+    return stored ? JSON.parse(stored) : null;
+  });
+
+  useEffect(() => {
+    if (selectedBusiness) {
+      localStorage.setItem('selectedBusiness', JSON.stringify(selectedBusiness));
+    } else {
+      localStorage.removeItem('selectedBusiness');
+    }
+  }, [selectedBusiness]);
+
   return (
     <aside 
       className={cn(

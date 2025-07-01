@@ -39,7 +39,7 @@ const viewTitles: Record<OwnerViewType, string> = {
 
 export const OwnerLayout = ({ currentView, onViewChange, children }: OwnerLayoutProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, currentBusinessUser } = useAuth();
 
   return (
     <div className="min-h-screen bg-slate-50 flex w-full">
@@ -111,7 +111,7 @@ export const OwnerLayout = ({ currentView, onViewChange, children }: OwnerLayout
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2 text-sm text-slate-600">
               <User size={16} />
-              <span>{user?.name} ({user?.role})</span>
+              <span>{currentBusinessUser?.full_name || user?.email} ({currentBusinessUser?.role || 'user'})</span>
             </div>
             <Button variant="outline" size="sm" onClick={logout} className="flex items-center space-x-2">
               <LogOut size={16} />

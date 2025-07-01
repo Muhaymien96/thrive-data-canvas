@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,33 +5,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X } from 'lucide-react';
-
-interface BusinessEntity {
-  id: string;
-  name: string;
-  description: string;
-  industry: string;
-  address: string;
-  phone: string;
-  email: string;
-  website?: string;
-  registrationNumber?: string;
-  taxNumber?: string;
-  vatNumber?: string;
-  status: 'active' | 'inactive';
-  createdAt: string;
-}
+import { Building2, Plus, ArrowLeft } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
+import type { Business } from '@/types/database';
 
 interface BusinessFormProps {
-  business?: BusinessEntity | null;
-  onClose: () => void;
-  onSave: (business: BusinessEntity) => void;
+  onBusinessCreated: (business: Business) => void;
+  onCancel?: () => void;
 }
 
-const industries = [
+const businessTypes = [
   'Agriculture',
-  'Food & Beverage',
+  'Food & Beverage', 
   'Technology',
   'Manufacturing',
   'Retail',
@@ -45,189 +30,180 @@ const industries = [
   'Other'
 ];
 
-export const BusinessForm = ({ business, onClose, onSave }: BusinessFormProps) => {
-  const [formData, setFormData] = useState<Partial<BusinessEntity>>({
-    name: business?.name || '',
-    description: business?.description || '',
-    industry: business?.industry || '',
-    address: business?.address || '',
-    phone: business?.phone || '',
-    email: business?.email || '',
-    website: business?.website || '',
-    registrationNumber: business?.registrationNumber || '',
-    taxNumber: business?.taxNumber || '',
-    vatNumber: business?.vatNumber || '',
-    status: business?.status || 'active',
-    createdAt: business?.createdAt || new Date().toISOString()
+export const BusinessForm = ({ onBusinessCreated, onCancel }: BusinessFormProps) => {
+  const { createBusiness, currentOrganization } = useAuth();
+  const [formData, setFormData] = useState({
+    name: '',
+    type: '',
+    description: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData as BusinessEntity);
+    
+    console.log('BusinessForm: Form submitted with data:', formData);
+    console.log('BusinessForm: Current organization:', currentOrganization);
+    
+    if (!formData.name.trim() || !formData.type.trim()) {
+      toast({
+        title: "Error",
+        description: "Please fill in the business name and type.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!currentOrganization) {
+      toast({
+        title: "Error",
+        description: "No organization selected. Please create or join an organization first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    // Create a timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Business creation timed out after 30 seconds')), 30000);
+    });
+    
+    try {
+      console.log('BusinessForm: Starting business creation...');
+      
+      const result = await Promise.race([
+        createBusiness({
+          ...formData,
+          organization_id: currentOrganization.id
+        }),
+        timeoutPromise
+      ]) as { business: Business; businessUser: any };
+      
+      console.log('BusinessForm: Business creation successful:', result);
+      
+      toast({
+        title: "Success",
+        description: "Your business has been created successfully!",
+      });
+
+      onBusinessCreated(result.business);
+    } catch (error) {
+      console.error('BusinessForm: Error creating business:', error);
+      
+      let errorMessage = "Failed to create business. Please try again.";
+      if (error instanceof Error) {
+        if (error.message.includes('timeout')) {
+          errorMessage = "Business creation is taking too long. Please check your connection and try again.";
+        } else if (error.message.includes('permission')) {
+          errorMessage = "You don't have permission to create businesses in this organization.";
+        } else {
+          errorMessage = `Failed to create business: ${error.message}`;
+        }
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>{business ? 'Edit Business' : 'Add New Business'}</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X size={16} />
-          </Button>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          {onCancel && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onCancel}
+              className="absolute top-4 left-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+          )}
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+            <Building2 className="h-6 w-6 text-blue-600" />
+          </div>
+          <CardTitle className="text-2xl">Create Your Business</CardTitle>
+          <p className="text-sm text-slate-600 mt-2">
+            Let's set up your business profile to get started
+          </p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-slate-900">Basic Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Business Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="industry">Industry *</Label>
-                  <Select
-                    value={formData.industry}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, industry: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select industry" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {industries.map((industry) => (
-                        <SelectItem key={industry} value={industry}>
-                          {industry}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  rows={3}
-                />
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Business Name *</Label>
+              <Input
+                id="name"
+                type="text"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="Enter your business name"
+                required
+              />
             </div>
-
-            {/* Contact Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-slate-900">Contact Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone *</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="address">Address *</Label>
-                  <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    value={formData.website}
-                    onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
-                    placeholder="https://www.example.com"
-                  />
-                </div>
-              </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="type">Business Type *</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(value) => handleInputChange('type', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select business type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {businessTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-
-            {/* Registration Details */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-slate-900">Registration Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="registrationNumber">Company Registration Number</Label>
-                  <Input
-                    id="registrationNumber"
-                    value={formData.registrationNumber}
-                    onChange={(e) => setFormData(prev => ({ ...prev, registrationNumber: e.target.value }))}
-                    placeholder="CK2024/000000/07"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="taxNumber">Tax Number</Label>
-                  <Input
-                    id="taxNumber"
-                    value={formData.taxNumber}
-                    onChange={(e) => setFormData(prev => ({ ...prev, taxNumber: e.target.value }))}
-                    placeholder="0000000000"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="vatNumber">VAT Number</Label>
-                  <Input
-                    id="vatNumber"
-                    value={formData.vatNumber}
-                    onChange={(e) => setFormData(prev => ({ ...prev, vatNumber: e.target.value }))}
-                    placeholder="4000000000"
-                  />
-                </div>
-              </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder="Brief description of your business"
+                rows={3}
+              />
             </div>
-
-            {/* Status */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-slate-900">Status</h3>
-              <div className="w-32">
-                <Label htmlFor="status">Business Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as 'active' | 'inactive' }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-2 pt-6 border-t">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                {business ? 'Update Business' : 'Add Business'}
-              </Button>
-            </div>
+            
+            <Button
+              type="submit" 
+              className="w-full"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Creating Business...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Business
+                </>
+              )}
+            </Button>
           </form>
         </CardContent>
       </Card>

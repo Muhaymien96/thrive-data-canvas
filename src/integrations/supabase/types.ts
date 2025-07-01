@@ -6,7 +6,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type Database = {
+export interface Database {
   public: {
     Tables: {
       business_users: {
@@ -16,6 +16,9 @@ export type Database = {
           id: string
           role: Database["public"]["Enums"]["user_role"]
           user_id: string
+          full_name: string | null
+          avatar_url: string | null
+          email: string | null
         }
         Insert: {
           business_id: string
@@ -23,6 +26,9 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           user_id: string
+          full_name?: string | null
+          avatar_url?: string | null
+          email?: string | null
         }
         Update: {
           business_id?: string
@@ -30,6 +36,9 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           user_id?: string
+          full_name?: string | null
+          avatar_url?: string | null
+          email?: string | null
         }
         Relationships: [
           {
@@ -37,6 +46,63 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_access_requests: {
+        Row: {
+          id: string
+          business_id: string
+          requester_email: string
+          requester_name: string | null
+          requester_message: string | null
+          requested_role: string
+          status: string
+          approved_by: string | null
+          approved_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          requester_email: string
+          requester_name?: string | null
+          requester_message?: string | null
+          requested_role?: string
+          status?: string
+          approved_by?: string | null
+          approved_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          requester_email?: string
+          requester_name?: string | null
+          requester_message?: string | null
+          requested_role?: string
+          status?: string
+          approved_by?: string | null
+          approved_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_access_requests_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_access_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -550,33 +616,6 @@ export type Database = {
           },
         ]
       }
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          created_at: string
-          email: string
-          full_name: string | null
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          email: string
-          full_name?: string | null
-          id: string
-          updated_at?: string
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string
-          email?: string
-          full_name?: string | null
-          id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       stock_movements: {
         Row: {
           business_id: string
@@ -842,18 +881,177 @@ export type Database = {
         }
         Relationships: []
       }
+      organizations: {
+        Row: {
+          id: string
+          name: string
+          created_at: string
+          updated_at: string
+          owner_id: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_at?: string
+          updated_at?: string
+          owner_id: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_at?: string
+          updated_at?: string
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizations_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      organization_users: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string
+          role: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id: string
+          role: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string
+          role?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_users_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      invites: {
+        Row: {
+          id: string
+          organization_id: string
+          email: string
+          role: string
+          invite_code: string
+          expires_at: string
+          created_at: string
+          created_by: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          email: string
+          role: string
+          invite_code: string
+          expires_at: string
+          created_at?: string
+          created_by: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          email?: string
+          role?: string
+          invite_code?: string
+          expires_at?: string
+          created_at?: string
+          created_by?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invites_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invites_used_by_fkey"
+            columns: ["used_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       create_self_supplier: {
-        Args: { business_id: string; business_name: string }
-        Returns: string
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       user_has_business_access: {
-        Args: { business_id: string }
+        Args: {
+          p_user_id: string
+          p_business_id: string
+        }
         Returns: boolean
+      }
+      create_business_user: {
+        Args: {
+          p_business_id: string
+          p_user_id: string
+          p_role: string
+          p_full_name: string | null
+          p_email: string | null
+        }
+        Returns: Json
+      }
+      create_organization_with_owner: {
+        Args: {
+          p_name: string
+          p_owner_id: string
+        }
+        Returns: Json
+      }
+      generate_invite_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
     }
     Enums: {
